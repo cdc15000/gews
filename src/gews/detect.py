@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime
 
 import numpy as np
 from scipy import ndimage
@@ -59,6 +60,12 @@ class AnomalyFlag:
 
     # Voight analysis (if applicable)
     voight_fit: dict | None = None  # predicted failure time, R², etc.
+
+    # Mean displacement time series over the flagged cluster pixels.
+    # dict with "dates" (list of ISO date strings) and "values"
+    # (list of floats, displacement in meters).  Populated when raw
+    # displacement is supplied to detect_anomalies(); None otherwise.
+    timeseries: dict | None = None
 
     # Metadata for Tier 1
     detection_details: dict = field(default_factory=dict)
@@ -243,6 +250,12 @@ def detect_anomalies(
     # highest-scoring instance
     flags = _deduplicate_flags(all_flags, latitude, longitude)
 
+    # Populate per-flag displacement time series when raw data is
+    # available.  Done after dedup so we only compute for surviving
+    # flags.
+    if dates is not None and displacement is not None:
+        _populate_timeseries(flags, dates, displacement)
+
     # Voight analysis on top candidates
     if det.get("voight", {}).get("enabled", False):
         flags = _apply_voight_analysis(
@@ -342,6 +355,56 @@ def _estimate_pixel_area(latitude: np.ndarray, longitude: np.ndarray) -> float:
         lat_m = dlat * 111_320
         lon_m = dlon * 111_320 * np.cos(np.radians(mean_lat))
         return lat_m * lon_m
+
+
+def _ordinal_to_iso(ordinal: float) -> str:
+    """Convert an ordinal date to an ISO date string (YYYY-MM-DD)."""
+    return datetime.fromordinal(int(ordinal)).strftime("%Y-%m-%d")
+
+
+def _populate_timeseries(
+    flags: list[AnomalyFlag],
+    dates: np.ndarray,
+    displacement: np.ndarray,
+) -> None:
+    """
+    Populate the ``timeseries`` field on each flag with the mean
+    displacement over the flag's pixel cluster.
+
+    Parameters
+    ----------
+    flags : list[AnomalyFlag]
+        Flags to populate (modified in place).
+    dates : np.ndarray
+        Acquisition dates as ordinal days, shape [n_epochs].
+    displacement : np.ndarray
+        Raw LOS displacement in meters, shape [n_epochs, n_rows, n_cols].
+    """
+    n_epochs, n_rows, n_cols = displacement.shape
+
+    for flag in flags:
+        rows = flag.pixel_indices[:, 0]
+        cols = flag.pixel_indices[:, 1]
+
+        # Clamp to valid index range
+        valid = (rows < n_rows) & (cols < n_cols) & (rows >= 0) & (cols >= 0)
+        rows, cols = rows[valid], cols[valid]
+        if len(rows) == 0:
+            continue
+
+        # Mean displacement across cluster pixels at each epoch
+        mean_disp = np.nanmean(displacement[:, rows, cols], axis=1)
+
+        # Keep only finite epochs so downstream consumers (JSON, SVG)
+        # never encounter NaN / Inf.
+        finite_mask = np.isfinite(mean_disp)
+        if not np.any(finite_mask):
+            continue
+
+        ts_dates = [_ordinal_to_iso(d) for d, ok in zip(dates, finite_mask) if ok]
+        ts_values = [round(float(v), 4) for v, ok in zip(mean_disp, finite_mask) if ok]
+
+        flag.timeseries = {"dates": ts_dates, "values": ts_values}
 
 
 def _detect_step_change_anomalies(

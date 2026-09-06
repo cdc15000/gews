@@ -401,7 +401,9 @@ function renderTimeseriesSVG(dates, values, flagId) {
     for (var y = 0; y <= 4; y++) {
         var yv = vmin + (vmax - vmin) * y / 4;
         var yp = h + pad - (y / 4) * h;
-        svg += '<text x="' + (pad - 5) + '" y="' + yp + '" text-anchor="end" font-size="10" fill="#636e72">' + yv.toFixed(1) + '</text>';
+        var range = vmax - vmin;
+        var dp = range < 0.1 ? 4 : range < 1 ? 3 : 2;
+        svg += '<text x="' + (pad - 5) + '" y="' + yp + '" text-anchor="end" font-size="10" fill="#636e72">' + yv.toFixed(dp) + '</text>';
         svg += '<line x1="' + pad + '" y1="' + yp + '" x2="' + (w + pad) + '" y2="' + yp + '" stroke="#dfe6e9" stroke-width="0.5"/>';
     }
     // Data line
@@ -426,7 +428,7 @@ function renderTimeseriesSVG(dates, values, flagId) {
         svg += '<text x="' + x + '" y="' + (h + pad + 16) + '" text-anchor="middle" font-size="10" fill="#636e72">' + dates[idx] + '</text>';
     }
     svg += '<text x="' + (w / 2 + pad) + '" y="' + (h + pad + 35) + '" text-anchor="middle" font-size="12" fill="#2d3436">Date</text>';
-    svg += '<text transform="rotate(-90)" x="' + (-(h / 2 + pad)) + '" y="14" text-anchor="middle" font-size="12" fill="#2d3436">Displacement (mm)</text>';
+    svg += '<text transform="rotate(-90)" x="' + (-(h / 2 + pad)) + '" y="14" text-anchor="middle" font-size="12" fill="#2d3436">Displacement (m)</text>';
     svg += '</svg>';
     return svg;
 }
