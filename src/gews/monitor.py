@@ -610,6 +610,23 @@ def run_check_cycle(site_config: dict) -> list[dict]:
             alerts = build_alerts(result["flags"], result["ts"], site_config, state)
             write_alerts(alerts, site_config)
 
+            # Dispatch alerts to configured notification channels
+            # (email, Slack, webhook).  If all channels fail for a given
+            # alert, remove its signature so the next cycle retries.
+            from gews.alerts import AlertDispatcher
+
+            dispatcher = AlertDispatcher.from_config(site_config)
+            for alert in alerts:
+                results = dispatcher.dispatch(
+                    alert["level"],
+                    alert["site"],
+                    alert["message"],
+                    {k: v for k, v in alert.items()
+                     if k not in ("level", "site", "message")},
+                )
+                if results and not any(results.values()):
+                    state.alerted_signatures.discard(alert["alert_id"])
+
         state.last_check = datetime.now(timezone.utc).isoformat()
         state.n_checks += 1
         state.save(state_path)
