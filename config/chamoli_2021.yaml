@@ -1,0 +1,122 @@
+# GEWS Site Configuration — Chamoli Rock-Ice Avalanche
+# 7 February 2021, Chamoli district, Uttarakhand, India
+#
+# On 7 Feb 2021 a large rock-ice avalanche detached from the north face
+# of Ronti peak (~5,600 m) above the Rishiganga and Dhauliganga valleys.
+# The mass entrained glacier ice and generated a debris flow that
+# destroyed two hydropower projects and killed >200 people. Pre-event
+# InSAR analysis (Shugar et al. 2021, Science) showed the source wedge
+# had been creeping for years.
+#
+# This config sets up continuous monitoring of the broader Chamoli
+# source zone and adjacent unstable slopes for renewed activity.
+
+site:
+  name: "Chamoli, Uttarakhand"
+  event_date: "2021-02-07"
+  description: >
+    Nanda Devi / Ronti peak rock-ice avalanche source zone. The 7 Feb
+    2021 event released ~27 million m3 of rock and glacier ice from the
+    north face of Ronti peak, generating a catastrophic debris flow down
+    the Rishiganga and Dhauliganga valleys. >200 killed, two hydropower
+    plants destroyed. Pre-event creep detected in InSAR time series
+    (Shugar et al. 2021). Adjacent slopes show similar lithology and
+    glacier-permafrost coupling.
+
+  # Source zone coordinates (WGS84) — center of the Ronti peak headwall
+  latitude: 30.38
+  longitude: 79.73
+  buffer_km: 20  # captures Ronti, Trishuli, and adjacent unstable slopes
+
+acquire:
+  platform: NISAR
+  product_types: ["GUNW", "GOFF"]
+
+  # For retrospective analysis, also ingest Sentinel-1 archive
+  # (NISAR-only for forward monitoring)
+  start_date: "2025-01-01"
+  end_date: null  # open-ended for continuous monitoring
+
+  path_number: null  # auto-select track with best coverage
+  max_scenes: 200
+
+  gunw_dir: "data/nisar/chamoli/gunw"
+  goff_dir: "data/nisar/chamoli/goff"
+  n_workers: 4
+
+process:
+  dem_source: "COP-30"  # Copernicus 30m DEM — better void-fill than SRTM in HMA
+
+  coregistration:
+    method: "geometry"
+    number_of_bursts: null
+
+  network:
+    method: "sequential"
+    max_temporal_baseline_days: 48
+    max_perpendicular_baseline_m: 200
+
+  unwrapping:
+    method: "snaphu"
+    init_method: "MCF"
+    coherence_threshold: 0.35  # slightly relaxed — steep terrain, seasonal snow
+
+  mintpy:
+    reference_point: [30.50, 79.60]  # stable ridge NW of source zone
+    tropospheric_correction: "ERA5"
+    min_temporal_coherence: 0.65  # relaxed for high-mountain terrain
+    output_dir: "data/mintpy/chamoli"
+
+detect:
+  seasonal_model: "harmonic"
+  n_harmonics: 2
+
+  acceleration:
+    window_size_days: 60
+    step_days: 12
+    changepoint:
+      model: "rbf"
+      penalty: "bic"
+      min_segment_size: 3
+    # Lower threshold — the 2021 failure showed subtle pre-event creep
+    # that a 2.5-sigma threshold would have caught only ~2 weeks before
+    # collapse. 2.0 sigma gives earlier warning at the cost of more
+    # false positives requiring analyst review.
+    sigma_threshold: 2.0
+
+  step_change:
+    sigma_threshold: 4.0
+    min_displacement_m: 0.3  # lower threshold — steep terrain, small displacements matter
+
+  clustering:
+    min_cluster_pixels: 4
+    max_distance_m: 250
+    min_area_m2: 8000  # slightly smaller than default — narrow headwalls
+
+  voight:
+    enabled: true
+    min_points: 5
+    r_squared_threshold: 0.7
+
+cascade:
+  # Operational threshold — the 2021 event was ~27 Mm3, but smaller
+  # failures from adjacent slopes could still generate lethal debris flows
+  min_volume_m3: 500000
+
+  exposure:
+    max_runout_km: 40  # 2021 debris flow traveled ~27 km
+    angle_of_reach_deg: 10
+    population_source: "worldpop"
+    # Key downstream assets to flag
+    # - Tapovan Vishnugad HEP (under reconstruction)
+    # - Rishiganga HEP (destroyed, under assessment)
+    # - Villages along Dhauliganga and Alaknanda
+
+  valley_width_threshold_m: 400  # narrow gorge sections
+
+report:
+  output_dir: "output/chamoli"
+  formats: ["html", "geojson"]
+  include_time_series_plots: true
+  include_spatial_maps: true
+  include_cascade_scenarios: true

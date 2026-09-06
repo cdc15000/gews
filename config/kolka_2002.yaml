@@ -1,0 +1,133 @@
+# GEWS Site Configuration — Kolka Glacier, North Ossetia
+# 20 September 2002, Genaldon Valley, Caucasus, Russia
+#
+# On 20 Sep 2002 the entire tongue of Kolka Glacier (~100 Mm3 of ice
+# and entrained rock) detached from its bed and surged 18 km down the
+# Genaldon valley in approximately 4 minutes. The mass partially
+# overtopped the Karmadon gorge walls and deposited ~100 m of debris,
+# creating a dam. 125 people were killed including a film crew.
+#
+# The cause remains debated: initial rock/ice fall from the Dzhimarai-
+# khokh north wall onto the glacier, combined with possible subglacial
+# volcanic heat anomaly reducing basal friction (Haeberli et al. 2004).
+# The glacier has been rebuilding since 2002 and requires monitoring
+# for renewed instability as ice volume increases.
+#
+# This config monitors the Kolka cirque, the Genaldon valley, and the
+# Dzhimarai-khokh headwall for precursory deformation.
+
+site:
+  name: "Kolka Glacier, North Ossetia"
+  event_date: "2002-09-20"
+  description: >
+    Catastrophic glacier detachment in the Genaldon valley, Greater
+    Caucasus. On 20 Sep 2002, ~100 Mm3 of glacier ice and rock debris
+    traveled 18 km in ~4 minutes, killing 125 people. The entire glacier
+    tongue detached — a rare, poorly understood failure mode. Possible
+    contributing factors include rock/ice falls from Dzhimarai-khokh
+    (4,780 m) and subglacial geothermal anomalies. The glacier is now
+    rebuilding; monitored for renewed mass accumulation and instability.
+
+  # Kolka Glacier cirque center (WGS84)
+  latitude: 42.75
+  longitude: 44.55
+  buffer_km: 15  # captures cirque, headwall, and upper Genaldon valley
+
+acquire:
+  platform: NISAR
+  product_types: ["GUNW", "GOFF"]
+
+  start_date: "2025-01-01"
+  end_date: null
+
+  path_number: null
+  max_scenes: 200
+
+  gunw_dir: "data/nisar/kolka/gunw"
+  goff_dir: "data/nisar/kolka/goff"
+  n_workers: 4
+
+process:
+  dem_source: "COP-30"
+
+  coregistration:
+    method: "geometry"
+    number_of_bursts: null
+
+  network:
+    method: "sequential"
+    max_temporal_baseline_days: 48
+    max_perpendicular_baseline_m: 200
+
+  unwrapping:
+    method: "snaphu"
+    init_method: "MCF"
+    coherence_threshold: 0.35  # steep terrain, seasonal snow cover
+
+  mintpy:
+    reference_point: "auto"
+    tropospheric_correction: "ERA5"
+    min_temporal_coherence: 0.65
+    output_dir: "data/mintpy/kolka"
+
+detect:
+  seasonal_model: "harmonic"
+  n_harmonics: 2
+
+  acceleration:
+    window_size_days: 60
+    step_days: 12
+    changepoint:
+      model: "rbf"
+      penalty: "bic"
+      min_segment_size: 3
+    # Very sensitive threshold — a repeat Kolka-type event would be
+    # catastrophic and may have subtle precursors. Accept higher false
+    # positive rate in exchange for earlier detection.
+    sigma_threshold: 1.8
+
+  step_change:
+    sigma_threshold: 4.0
+    min_displacement_m: 0.3  # catch small rock/ice falls from headwall
+
+  clustering:
+    min_cluster_pixels: 3   # headwall failures may start small
+    max_distance_m: 200
+    min_area_m2: 5000
+
+  voight:
+    enabled: true
+    min_points: 4  # fewer points acceptable for early warning
+    r_squared_threshold: 0.7
+
+  # Additional: monitor the Dzhimarai-khokh headwall separately
+  # for rock-slope instability that could trigger glacier detachment
+  headwall_zone:
+    latitude: 42.73
+    longitude: 44.52
+    buffer_km: 3
+    description: >
+      Dzhimarai-khokh north face — source of rock/ice falls that may
+      have initiated the 2002 detachment. Steep, fractured granodiorite.
+
+cascade:
+  min_volume_m3: 50000  # even small headwall failures could trigger
+                        # a chain reaction on the rebuilding glacier
+
+  exposure:
+    max_runout_km: 25   # 2002 event traveled 18 km; modeling should extend further
+    angle_of_reach_deg: 8  # very low H/L ratio observed in 2002
+    population_source: "worldpop"
+    # Key downstream exposure:
+    # - Karmadon village and gorge (3 km from glacier)
+    # - Gisel town (~30 km downstream on Gizeldon river)
+    # - Vladikavkaz (60 km — only if valley dam fails catastrophically)
+
+  valley_width_threshold_m: 200  # Genaldon gorge is very narrow
+
+report:
+  output_dir: "output/kolka"
+  formats: ["html", "geojson"]
+  include_time_series_plots: true
+  include_spatial_maps: true
+  include_cascade_scenarios: true

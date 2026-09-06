@@ -1,0 +1,122 @@
+# GEWS Site Configuration — Aru Glacier Collapses
+# 17 July 2016 and 21 September 2016, Aru Range, Western Tibet
+#
+# Two unprecedented low-angle glacier collapses in the Aru Range
+# (Rutog County, Ngari Prefecture, Tibet). The first (17 Jul 2016)
+# released ~68 Mm3 of ice from Aru-1 glacier, traveling 8.5 km across
+# flat terrain and killing 9 herders and hundreds of livestock. The
+# second (21 Sep 2016) released ~83 Mm3 from neighboring Aru-2 glacier.
+#
+# Mechanism: subglacial meltwater pressurization on a fine-grained,
+# low-permeability till bed (~15 deg slope), likely amplified by
+# permafrost degradation and increased meltwater input (Kääb et al.
+# 2018, Nature Geoscience). Pre-event acceleration detected in
+# Landsat and radar imagery months before collapse.
+#
+# This config monitors the Aru Range for any recurrence and extends
+# surveillance to nearby glaciers with similar geometry.
+
+site:
+  name: "Aru Glaciers, Western Tibet"
+  event_date: "2016-07-17"
+  description: >
+    Twin glacier collapses in the Aru Range, western Tibet. Aru-1
+    collapsed 17 Jul 2016 (~68 Mm3); Aru-2 collapsed 21 Sep 2016
+    (~83 Mm3). Low-angle (~15 deg) glacier bed failures driven by
+    subglacial meltwater pressurization on fine-grained till, amplified
+    by permafrost warming. Pre-event surge-like acceleration visible in
+    satellite imagery months before failure. Nine herders and hundreds
+    of yaks killed.
+
+  # Center of the Aru-1 / Aru-2 collapse zone (WGS84)
+  latitude: 34.00
+  longitude: 82.20
+  buffer_km: 25  # captures both collapse scars and adjacent glaciers
+
+acquire:
+  platform: NISAR
+  product_types: ["GUNW", "GOFF"]
+
+  start_date: "2025-01-01"
+  end_date: null
+
+  path_number: null
+  max_scenes: 200
+
+  gunw_dir: "data/nisar/aru/gunw"
+  goff_dir: "data/nisar/aru/goff"
+  n_workers: 4
+
+process:
+  dem_source: "COP-30"
+
+  coregistration:
+    method: "geometry"
+    number_of_bursts: null
+
+  network:
+    method: "sequential"
+    max_temporal_baseline_days: 48
+    max_perpendicular_baseline_m: 200
+
+  unwrapping:
+    method: "snaphu"
+    init_method: "MCF"
+    coherence_threshold: 0.4  # flat terrain, good coherence expected
+
+  mintpy:
+    reference_point: "auto"
+    tropospheric_correction: "ERA5"
+    min_temporal_coherence: 0.7
+    output_dir: "data/mintpy/aru"
+
+detect:
+  seasonal_model: "harmonic"
+  n_harmonics: 2
+
+  acceleration:
+    window_size_days: 90  # longer window — pre-event surge developed over months
+    step_days: 12
+    changepoint:
+      model: "rbf"
+      penalty: "bic"
+      min_segment_size: 3
+    # Low threshold — the Aru failures showed gradual acceleration over
+    # months that might not exceed 2.5 sigma early on. Catching the
+    # transition from normal creep to surge-like behavior is critical.
+    sigma_threshold: 2.0
+
+  step_change:
+    sigma_threshold: 5.0
+    min_displacement_m: 0.5
+
+  clustering:
+    min_cluster_pixels: 8   # large glacier tongues — expect large anomaly zones
+    max_distance_m: 300
+    min_area_m2: 20000  # failures involved entire glacier tongues
+
+  voight:
+    enabled: true
+    min_points: 5
+    r_squared_threshold: 0.65  # slightly relaxed — surge dynamics may not
+                               # follow classic Voight's law precisely
+
+cascade:
+  # Both Aru collapses were >60 Mm3. Smaller collapses from adjacent
+  # glaciers could still be significant given the flat terrain and
+  # nomadic populations.
+  min_volume_m3: 1000000  # 1 Mm3 — only large events are consequential here
+
+  exposure:
+    max_runout_km: 15   # Aru-1 traveled 8.5 km on flat terrain
+    angle_of_reach_deg: 6  # very low angle of reach due to flat topography
+    population_source: "worldpop"
+
+  valley_width_threshold_m: 2000  # broad plateau — valley confinement less relevant
+
+report:
+  output_dir: "output/aru"
+  formats: ["html", "geojson"]
+  include_time_series_plots: true
+  include_spatial_maps: true
+  include_cascade_scenarios: true
