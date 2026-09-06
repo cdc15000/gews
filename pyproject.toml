@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gews"
 version = "0.1.0"
-description = "Global Early Warning System — PoC InSAR pipeline for satellite detection of unstable glaciers"
+description = "Glacier Early Warning System — PoC InSAR pipeline for satellite detection of unstable glaciers"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

@@ -46,7 +46,7 @@ def _load_config(config_path: str) -> dict:
 @click.group()
 @click.option("-v", "--verbose", is_flag=True, help="Verbose logging")
 def main(verbose: bool) -> None:
-    """GEWS — Global Early Warning System for unstable glacier detection."""
+    """GEWS — Glacier Early Warning System for unstable glacier detection."""
     _setup_logging(verbose)
 
 
@@ -377,7 +377,7 @@ def version() -> None:
     from gews import __version__
 
     click.echo(f"GEWS v{__version__}")
-    click.echo("Global Early Warning System — PoC InSAR Pipeline")
+    click.echo("Glacier Early Warning System — PoC InSAR Pipeline")
 
 
 if __name__ == "__main__":
