@@ -129,6 +129,17 @@ detect:
     min_points: 5  # minimum observations for fit
     r_squared_threshold: 0.7  # goodness of fit to declare trend
 
+  # Tier 1 multi-sensor cross-check filters — quality-based filtering
+  # to eliminate false positives from atmospheric noise, snow cover
+  # changes, or processing artifacts. Applied after Tier 0 detection
+  # and before cascade risk assessment.
+  # tier1_filters:
+  #   min_coherence: 0.3              # minimum interferometric coherence
+  #   min_spatial_consistency: 0.5    # fraction of pixels in largest connected component
+  #   min_temporal_consistency: 0.3   # fraction of epochs with active signal
+  #   remove_below_quality: 0.2      # composite score below this -> remove flag
+  #   demote_below_quality: 0.5      # composite score below this -> halve score
+
 cascade:
   # Tier 1 — cascade risk filters
   # These are geometric/physical checks, not ML
