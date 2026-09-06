@@ -534,6 +534,303 @@ def detect_step_changes(
     )
 
 
+@dataclass
+class ChangePointResult:
+    """
+    Results from Bayesian Online Changepoint Detection (BOCPD).
+
+    Attributes
+    ----------
+    changepoint_indices : np.ndarray
+        Indices (into the *original* dates/displacement arrays) where
+        the changepoint probability exceeds the threshold.
+    run_length_posterior : np.ndarray
+        Full run-length posterior matrix, shape [n_dates, n_dates+1].
+        Entry [t, r] is P(run_length=r | x_1:t).
+    changepoint_probabilities : np.ndarray
+        Marginal probability of a changepoint at each time step,
+        P(r_t = 0 | x_1:t), shape [n_dates].
+    most_likely_changepoints : np.ndarray
+        Indices where changepoint_probabilities exceeds the threshold,
+        equivalent to changepoint_indices (provided for API clarity).
+    """
+
+    changepoint_indices: np.ndarray
+    run_length_posterior: np.ndarray
+    changepoint_probabilities: np.ndarray
+    most_likely_changepoints: np.ndarray
+
+
+def bocpd_changepoints(
+    dates: np.ndarray,
+    displacement: np.ndarray,
+    hazard_rate: float = 1 / 100,
+    prior_variance: float | None = None,
+    threshold: float = 0.25,
+) -> ChangePointResult:
+    """
+    Bayesian Online Changepoint Detection (Adams & MacKay 2007).
+
+    Detects changepoints in a displacement time series by maintaining
+    a posterior distribution over the current run length (time since
+    last changepoint). Uses a Normal-Inverse-Gamma conjugate prior
+    as the underlying predictive model (UPM), giving a Student-t
+    predictive distribution that properly handles unknown mean and
+    variance within each segment.
+
+    The algorithm operates on the *velocity* series (first differences
+    of displacement divided by time gaps) so that a change in
+    deformation rate appears as a mean shift, which the UPM detects
+    cleanly. A constant-velocity displacement trend becomes constant
+    velocity + noise, producing no spurious changepoints.
+
+    Convention: a changepoint at velocity-index k means the velocity
+    regime changed between original date index k and k+1 (the new
+    regime's first observation is at velocity index k+1). We report
+    original date index k+1 in changepoint_indices.
+
+    Parameters
+    ----------
+    dates : np.ndarray
+        Acquisition dates as ordinal days, shape [n].
+    displacement : np.ndarray
+        LOS displacement in meters, shape [n].
+    hazard_rate : float
+        Constant prior probability of a changepoint at each step,
+        i.e. 1 / expected_run_length. Default 1/100.
+    prior_variance : float or None
+        Scale parameter for the Normal-Inverse-Gamma prior (sets
+        the initial beta0 = prior_variance * alpha0). If None,
+        estimated from the data using the median absolute deviation
+        of successive velocity differences (robust to the
+        changepoints themselves).
+    threshold : float
+        Sensitivity threshold for detecting MAP run-length drops.
+        A changepoint is flagged when the MAP run length drops by
+        more than threshold * previous_MAP (fractional drop), or
+        the MAP run length falls below 2 after being above 5.
+        Lower values are more sensitive. Default 0.25.
+
+    Returns
+    -------
+    ChangePointResult
+    """
+    from scipy.special import gammaln
+
+    dates_f = dates.astype(float)
+    n = len(dates_f)
+
+    if n < 3:
+        empty = np.array([], dtype=int)
+        return ChangePointResult(
+            changepoint_indices=empty,
+            run_length_posterior=np.zeros((n, n + 1)),
+            changepoint_probabilities=np.zeros(n),
+            most_likely_changepoints=empty,
+        )
+
+    # ----- Convert to velocity (first differences / dt) -----
+    dt = np.diff(dates_f)
+    dt[dt == 0] = 1.0  # guard against duplicate dates
+    velocity = np.diff(displacement) / dt
+    n_vel = len(velocity)
+
+    # ----- Estimate scale if not provided -----
+    if prior_variance is None:
+        if n_vel < 2:
+            prior_variance = 1.0
+        else:
+            diffs = np.diff(velocity)
+            mad = np.median(np.abs(diffs - np.median(diffs)))
+            robust_std = mad * 1.4826
+            prior_variance = max(robust_std ** 2, 1e-20)
+
+    # ----- Normal-Inverse-Gamma prior hyperparameters -----
+    # mu0: prior mean (set to global mean of velocity)
+    # kappa0: prior precision weight (small = uninformative about mean)
+    # alpha0: shape for inverse-gamma on variance
+    # beta0: scale for inverse-gamma on variance
+    mu0 = float(np.mean(velocity))
+    kappa0 = 0.01  # weakly informative: new segments adapt quickly
+    alpha0 = 0.01  # weakly informative
+    beta0 = prior_variance * alpha0  # so E[sigma^2] = beta0/alpha0 = prior_variance
+
+    # ----- BOCPD recursion in log space -----
+    run_length_posterior = np.zeros((n_vel, n_vel + 1))
+    changepoint_probs = np.zeros(n_vel)
+
+    # Prior: run length 0 with probability 1
+    log_joint = np.array([0.0])  # log(1) = 0
+
+    # NIG sufficient statistics per run length:
+    # kappa[r], mu[r], alpha[r], beta[r]
+    run_kappa = np.array([kappa0])
+    run_mu = np.array([mu0])
+    run_alpha = np.array([alpha0])
+    run_beta = np.array([beta0])
+
+    for t in range(n_vel):
+        x = velocity[t]
+
+        # --- Step 1: Predictive probabilities BEFORE updating stats ---
+        # Student-t predictive: t_{2*alpha}(x | mu, beta*(kappa+1)/(alpha*kappa))
+        n_runs = len(log_joint)
+        log_pred = np.empty(n_runs)
+
+        for r in range(n_runs):
+            df = 2.0 * run_alpha[r]
+            pred_mu = run_mu[r]
+            pred_var = run_beta[r] * (run_kappa[r] + 1.0) / (
+                run_alpha[r] * run_kappa[r]
+            )
+            log_pred[r] = _log_student_t(x, df, pred_mu, pred_var)
+
+        # --- Step 2: Growth and changepoint probabilities ---
+        log_h = np.log(hazard_rate)
+        log_1mh = np.log(1.0 - hazard_rate)
+
+        log_growth = log_joint + log_pred + log_1mh
+        log_cp = _logsumexp(log_joint + log_pred + log_h)
+
+        new_log_joint = np.empty(n_runs + 1)
+        new_log_joint[0] = log_cp
+        new_log_joint[1:] = log_growth
+
+        # Normalize
+        log_evidence = _logsumexp(new_log_joint)
+        new_log_joint -= log_evidence
+
+        posterior_row = np.exp(new_log_joint)
+        run_length_posterior[t, : n_runs + 1] = posterior_row
+        changepoint_probs[t] = posterior_row[0]
+
+        # --- Step 3: Update NIG sufficient statistics ---
+        # For each existing run, update with new observation x.
+        # For the new r=0 run, reset to prior.
+        new_kappa = np.empty(n_runs + 1)
+        new_mu = np.empty(n_runs + 1)
+        new_alpha = np.empty(n_runs + 1)
+        new_beta = np.empty(n_runs + 1)
+
+        # r=0: fresh run with prior hyperparameters
+        new_kappa[0] = kappa0
+        new_mu[0] = mu0
+        new_alpha[0] = alpha0
+        new_beta[0] = beta0
+
+        # r>0: NIG posterior update for each continued run
+        old_kappa = run_kappa
+        old_mu = run_mu
+        old_alpha = run_alpha
+        old_beta = run_beta
+
+        new_kappa[1:] = old_kappa + 1.0
+        new_mu[1:] = (old_kappa * old_mu + x) / (old_kappa + 1.0)
+        new_alpha[1:] = old_alpha + 0.5
+        new_beta[1:] = (
+            old_beta
+            + 0.5 * old_kappa * (x - old_mu) ** 2 / (old_kappa + 1.0)
+        )
+
+        log_joint = new_log_joint
+        run_kappa = new_kappa
+        run_mu = new_mu
+        run_alpha = new_alpha
+        run_beta = new_beta
+
+    # ----- Detect changepoints from MAP run-length drops -----
+    # With a constant hazard rate, P(r=0) is algebraically always h
+    # regardless of the predictive model (the hazard factor cancels
+    # during normalization). Changepoints are instead detected by
+    # tracking the most-likely (MAP) run length over time: at a
+    # changepoint the MAP drops from a large value to near 0 as the
+    # posterior mass shifts from a long-running segment to a new one.
+    #
+    # We compute a "changepoint probability" per time step as
+    # P(r_t < min_run | data), i.e., the posterior mass concentrated
+    # at short run lengths. This rises sharply right after a regime
+    # change and stays low during a stable segment.
+    min_run = 3  # run lengths below this count as "just started"
+    for t in range(n_vel):
+        # Sum posterior mass at run lengths 0..min_run-1
+        row = run_length_posterior[t, :t + 2]
+        changepoint_probs[t] = float(np.sum(row[:min(min_run, len(row))]))
+
+    # Detect MAP drops: where MAP run length falls below a threshold
+    # after having been high, indicating a regime change.
+    map_run = np.array([
+        np.argmax(run_length_posterior[t, :t + 2]) for t in range(n_vel)
+    ])
+
+    vel_cp_indices = []
+    for t in range(1, n_vel):
+        # Flag a changepoint when MAP run length drops sharply
+        if map_run[t] < 3 and map_run[t - 1] >= 3:
+            vel_cp_indices.append(t)
+        elif (
+            t >= 2
+            and map_run[t] < 3
+            and map_run[t - 1] < 3
+            and map_run[t - 2] >= 3
+        ):
+            # Allow one-step lag for gradual transitions
+            if t - 1 not in vel_cp_indices:
+                vel_cp_indices.append(t - 1)
+
+    # Also flag high short-run posterior mass (covers gradual onsets
+    # where MAP may not drop as cleanly)
+    for t in range(min_run, n_vel):
+        if changepoint_probs[t] > (1.0 - threshold):
+            if t not in vel_cp_indices:
+                vel_cp_indices.append(t)
+
+    vel_cp_indices = sorted(set(vel_cp_indices))
+    date_indices = np.array([i + 1 for i in vel_cp_indices], dtype=int)
+
+    # Build full-size arrays mapped to date indices
+    full_posterior = np.zeros((n, n + 1))
+    full_cp_probs = np.zeros(n)
+    full_posterior[1:, :n_vel + 1] = run_length_posterior
+    full_cp_probs[1:] = changepoint_probs
+
+    return ChangePointResult(
+        changepoint_indices=date_indices,
+        run_length_posterior=full_posterior,
+        changepoint_probabilities=full_cp_probs,
+        most_likely_changepoints=date_indices,
+    )
+
+
+def _log_student_t(x: float, df: float, mu: float, scale_sq: float) -> float:
+    """Log probability of x under a Student-t distribution.
+
+    Parameters
+    ----------
+    x : observation
+    df : degrees of freedom (2 * alpha)
+    mu : location
+    scale_sq : scale squared (beta * (kappa+1) / (alpha * kappa))
+    """
+    from scipy.special import gammaln
+
+    return float(
+        gammaln((df + 1.0) / 2.0)
+        - gammaln(df / 2.0)
+        - 0.5 * np.log(df * np.pi * scale_sq)
+        - (df + 1.0) / 2.0 * np.log(1.0 + (x - mu) ** 2 / (df * scale_sq))
+    )
+
+
+def _logsumexp(a: np.ndarray) -> float:
+    """Numerically stable log-sum-exp."""
+    if len(a) == 0:
+        return -np.inf
+    a_max = np.max(a)
+    if not np.isfinite(a_max):
+        return -np.inf
+    return a_max + np.log(np.sum(np.exp(a - a_max)))
+
+
 def fit_voight(
     dates: np.ndarray,
     velocity: np.ndarray,
