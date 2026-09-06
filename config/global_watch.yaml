@@ -140,3 +140,216 @@ sites:
     acquire:
       gunw_dir: "data/nisar/karakoram/gunw"
       goff_dir: "data/nisar/karakoram/goff"
+
+  # -----------------------------------------------------------------
+  # Additional known unstable / historically dangerous sites
+  # -----------------------------------------------------------------
+
+  # Kolka Glacier — catastrophic detachment on 20 Sep 2002 killed ~125
+  # people in Karmadon gorge. The entire glacier tongue (~100 Mm3)
+  # detached, entraining rock debris and traveling 18 km in ~4 min.
+  - site:
+      name: "Kolka Glacier, North Ossetia"
+      event_date: "2002-09-20"
+      description: >
+        Site of the catastrophic 2002 glacier detachment in the Genaldon
+        valley, Caucasus. ~100 million m3 of ice and rock traveled 18 km
+        in minutes, killing ~125 people. Post-event glacier is rebuilding;
+        monitored for renewed instability.
+      latitude: 42.75
+      longitude: 44.55
+      buffer_km: 15
+    acquire:
+      gunw_dir: "data/nisar/kolka/gunw"
+      goff_dir: "data/nisar/kolka/goff"
+    detect:
+      acceleration:
+        sigma_threshold: 2.0  # heightened sensitivity — catastrophic precedent
+
+  # Aru glaciers — twin collapses on 17 Jul and 21 Sep 2016 in western
+  # Tibet; each released ~70 Mm3. Extremely unusual low-angle detachments
+  # attributed to permafrost degradation and meltwater.
+  - site:
+      name: "Aru Glaciers, Western Tibet"
+      event_date: "2016-07-17"
+      description: >
+        Twin glacier collapses in the Aru Range, western Tibet (Jul and
+        Sep 2016). Each released ~70 million m3 from low-angle (~15 deg)
+        glacier beds — an unprecedented failure mode attributed to
+        permafrost warming and subglacial meltwater pressurization.
+        Nine herders killed; yak herds destroyed.
+      latitude: 34.00
+      longitude: 82.20
+      buffer_km: 20
+    acquire:
+      gunw_dir: "data/nisar/aru/gunw"
+      goff_dir: "data/nisar/aru/goff"
+    detect:
+      acceleration:
+        sigma_threshold: 2.0  # low-angle bed — subtle precursors expected
+
+  # Grandes Jorasses hanging glacier — formally monitored serac on the
+  # south face of Grandes Jorasses (Whymper spur). Periodic large ice
+  # avalanches threaten the Val Ferret below.
+  - site:
+      name: "Grandes Jorasses, Mont Blanc Massif"
+      event_date: null
+      description: >
+        Hanging glacier (Whymper serac) on the south face of Grandes
+        Jorasses, Mont Blanc massif. Under continuous monitoring by
+        Fondazione Montagna Sicura since 2014. Periodic ice avalanches
+        of 10,000-50,000 m3 threaten the Val Ferret road and valley
+        infrastructure below.
+      latitude: 45.87
+      longitude: 6.98
+      buffer_km: 8
+    acquire:
+      gunw_dir: "data/nisar/grandes_jorasses/gunw"
+      goff_dir: "data/nisar/grandes_jorasses/goff"
+    detect:
+      clustering:
+        min_cluster_pixels: 3   # small hanging glacier target
+        min_area_m2: 5000
+    cascade:
+      min_volume_m3: 50000
+      exposure:
+        max_runout_km: 8
+        angle_of_reach_deg: 14  # steep ice avalanche geometry
+
+  # Aletsch Glacier — largest glacier in the Alps (>80 km2). Long-term
+  # retreat documented since 1850; monitored by ETH Zurich / VAW for
+  # mass balance, moraine stability, and proglacial lake formation.
+  - site:
+      name: "Aletsch Glacier, Valais, Switzerland"
+      event_date: null
+      description: >
+        Largest glacier in the European Alps (~80 km2). Monitored for
+        long-term retreat dynamics, lateral moraine instability (the
+        Moosfluh rock slope above the glacier tongue is accelerating),
+        and proglacial lake formation risk. UNESCO World Heritage Site.
+      latitude: 46.45
+      longitude: 8.05
+      buffer_km: 20
+    acquire:
+      gunw_dir: "data/nisar/aletsch/gunw"
+      goff_dir: "data/nisar/aletsch/goff"
+
+  # Sermeq Kujalleq (Jakobshavn) — one of the fastest and most
+  # productive tidewater glaciers in Greenland; major contributor to
+  # sea level rise. Large calving events generate tsunamigenic waves.
+  - site:
+      name: "Sermeq Kujalleq (Jakobshavn), Greenland"
+      event_date: null
+      description: >
+        One of the fastest-flowing and most productive tidewater glaciers
+        on Earth (~45 km3/yr ice discharge). Calving front retreat has
+        accelerated since 2000. Large calving events generate tsunamigenic
+        waves in Ilulissat Icefjord. Key sea-level-rise contributor
+        monitored by DMI and NASA.
+      latitude: 69.17
+      longitude: -49.83
+      buffer_km: 30
+    acquire:
+      gunw_dir: "data/nisar/jakobshavn/gunw"
+      goff_dir: "data/nisar/jakobshavn/goff"
+    detect:
+      acceleration:
+        window_size_days: 90   # slower dynamics, longer baseline needed
+        sigma_threshold: 3.0   # large natural variability in flow speed
+
+  # Thwaites Glacier — marine-based ice sheet in West Antarctica
+  # potentially subject to marine ice-sheet instability (MISI).
+  # Collapse could raise global sea level by ~65 cm.
+  - site:
+      name: "Thwaites Glacier, West Antarctica"
+      event_date: null
+      description: >
+        Marine-based glacier in West Antarctica, often called the
+        "Doomsday Glacier." Grounding line retreating into a retrograde
+        bed, raising concerns of irreversible marine ice sheet instability
+        (MISI). Complete collapse could contribute ~65 cm of global sea
+        level rise. Monitored by ITGC (International Thwaites Glacier
+        Collaboration).
+      latitude: -75.50
+      longitude: -106.75
+      buffer_km: 50
+    acquire:
+      gunw_dir: "data/nisar/thwaites/gunw"
+      goff_dir: "data/nisar/thwaites/goff"
+    detect:
+      acceleration:
+        window_size_days: 120  # ice-sheet-scale dynamics, long baseline
+        step_days: 24
+        sigma_threshold: 3.0
+      clustering:
+        min_cluster_pixels: 10  # large-scale features expected
+        max_distance_m: 500
+        min_area_m2: 50000
+
+  # Kyagar Glacier — surge-type glacier in the Chinese Karakoram that
+  # repeatedly blocks the Shaksgam River, forming ice-dammed lakes that
+  # produce outburst floods threatening downstream communities.
+  - site:
+      name: "Kyagar Glacier, Karakoram"
+      event_date: null
+      description: >
+        Surge-type glacier in the Chinese Karakoram that repeatedly
+        dams the Shaksgam River. At least six glacial lake outburst
+        floods (GLOFs) documented since 2000, most recently in 2018
+        and 2019. Monitored for surge onset and lake impoundment as
+        precursors to outburst floods.
+      latitude: 35.98
+      longitude: 77.10
+      buffer_km: 15
+    acquire:
+      gunw_dir: "data/nisar/kyagar/gunw"
+      goff_dir: "data/nisar/kyagar/goff"
+    detect:
+      acceleration:
+        sigma_threshold: 2.0  # surge-onset detection requires sensitivity
+
+  # Mount Meager — volcanic complex in British Columbia with the largest
+  # historical landslide in Canadian history (2010, ~53 Mm3).
+  - site:
+      name: "Mount Meager, British Columbia"
+      event_date: "2010-08-06"
+      description: >
+        Volcanic complex in the Garibaldi Volcanic Belt, BC. Site of
+        Canada's largest historical landslide (6 Aug 2010, ~53 Mm3)
+        which traveled 12 km down Meager Creek. Hydrothermally altered
+        volcanic rock combined with glacier retreat creates persistent
+        slope instability. Multiple unstable flanks identified by GSC.
+      latitude: 50.63
+      longitude: -123.50
+      buffer_km: 15
+    acquire:
+      gunw_dir: "data/nisar/meager/gunw"
+      goff_dir: "data/nisar/meager/goff"
+    cascade:
+      min_volume_m3: 500000    # large-scale failures expected
+      exposure:
+        max_runout_km: 20
+        angle_of_reach_deg: 8  # long-runout volcanic debris flows
+
+  # Huascaran, Peru — site of the deadliest glacier disasters in
+  # history: 1962 and 1970 ice-rock avalanches from the west face.
+  - site:
+      name: "Huascaran, Cordillera Blanca, Peru"
+      event_date: "1970-05-31"
+      description: >
+        West face of Huascaran (6,768 m), site of the deadliest glacier
+        disasters in recorded history. The 1970 earthquake-triggered
+        ice-rock avalanche killed ~6,000 in Yungay. Steep hanging
+        glaciers remain above populated valleys with limited warning
+        capacity. Monitored by INAIGEM.
+      latitude: -9.12
+      longitude: -77.60
+      buffer_km: 20
+    acquire:
+      gunw_dir: "data/nisar/huascaran/gunw"
+      goff_dir: "data/nisar/huascaran/goff"
+    cascade:
+      min_volume_m3: 500000
+      exposure:
+        max_runout_km: 30
+        angle_of_reach_deg: 9  # documented long-runout history
