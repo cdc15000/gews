@@ -9,6 +9,7 @@ Usage:
     gews assess   --config CONFIG     Run Tier 1 cascade risk assessment
     gews report   --config CONFIG     Generate analysis report
     gews monitor  --config CONFIG     Continuous monitoring for new NISAR data
+    gews dashboard --config CONFIG    Launch Tier 2 analyst review dashboard
     gews demo                         Run full pipeline on synthetic data
 """
 
@@ -369,6 +370,18 @@ def monitor(config: str, interval: float | None, check_now: bool) -> None:
             run_monitoring_loop(config_path, interval_hours=interval_hours)
         except KeyboardInterrupt:
             click.echo("\nMonitoring stopped.")
+
+
+@main.command()
+@click.option("--config", "-c", required=True, help="Path to site config YAML")
+@click.option("--port", default=8080, help="Port to serve on")
+@click.option("--data-dir", default="output", help="Directory containing flags.geojson")
+def dashboard(config: str, port: int, data_dir: str) -> None:
+    """Launch the Tier 2 analyst review dashboard."""
+    from gews.dashboard import serve
+
+    cfg = _load_config(config)
+    serve(data_dir=data_dir, port=port, config=cfg)
 
 
 @main.command()
