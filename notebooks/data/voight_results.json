@@ -1,0 +1,57 @@
+{
+  "site": {
+    "easting": 392042.0,
+    "northing": 3119847.0,
+    "epsg": 32645
+  },
+  "collapse_date": "2026-08-26",
+  "track": 98,
+  "generated": "2026-09-05T18:00:00",
+  "analysis_summary": "Voight inverse-velocity law does not produce a valid fit for this event. The displacement pattern is a step-change (3.5 m jump between Jul 2-14), not continuous acceleration. This is characteristic of a two-phase failure: initial partial collapse creating instability, followed by progressive degradation until catastrophic release on Aug 26. With only 4 post-gap epochs at 12-day sampling, the classic 1/v linear extrapolation cannot converge. The GOFF inter-epoch velocities DECELERATE after the initial jump (106,078 → 19,212 → 15,576 → 13,733 mm/yr), consistent with post-rupture creep rather than pre-failure acceleration.",
+  "key_finding": "While Voight analysis fails, simple velocity-change detection succeeds with 43 days advance notice. The anomaly detection approach (sigma-threshold on acceleration maps) is more robust than Voight for this failure mode.",
+  "sources": {
+    "GOFF": {
+      "displacement_series_mm": {
+        "20251128": 0.0,
+        "20251210": 54.2,
+        "20251222": 161.7,
+        "20260103": 173.3,
+        "20260115": 139.7,
+        "20260702": 139.7,
+        "20260714": -3345.4,
+        "20260726": -2714.2,
+        "20260819": -3737.7,
+        "20260831": -4188.9
+      },
+      "inter_epoch_velocity_mm_yr": {
+        "20251204_20251216": 3274,
+        "20251216_20251228": 353,
+        "20251228_20260109": -1022,
+        "20260109_20260121": 0,
+        "20260708_20260720": -106078,
+        "20260720_20260801": 19212,
+        "20260801_20260822": -15576,
+        "20260822_20260903": -13733
+      },
+      "voight_fit": null,
+      "reason_no_fit": "Velocity is non-monotonic with step-change pattern. 1/v increases (decelerates) after initial Jul 2-14 jump, violating Voight's continuous acceleration assumption."
+    },
+    "GUNW": {
+      "displacement_series_mm": {
+        "20251128": 0.0,
+        "20251210": -5.9,
+        "20251222": 29.0,
+        "20260103": 45.8,
+        "20260115": 32.5,
+        "20260620": 32.5,
+        "20260702": 14.0,
+        "20260714": -47.5,
+        "20260726": -20.4,
+        "20260819": -19.8,
+        "20260831": -44.8
+      },
+      "voight_fit": null,
+      "reason_no_fit": "InSAR phase wrapping limits GUNW to ~12 cm/cycle (L-band). The meter-scale GOFF displacement exceeds this, so GUNW shows only wrapped residuals with no monotonic acceleration trend."
+    }
+  }
+}

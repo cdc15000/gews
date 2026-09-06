@@ -1,0 +1,29 @@
+# Data and large/generated artifacts — never bake these into the image
+data/
+notebooks/data/nisar/
+notebooks/output/
+output/
+*.h5
+*.hdf5
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+gews/
+
+# VCS / tooling
+.git/
+.gitignore
+.DS_Store
+
+# Notebooks (not needed at runtime)
+notebooks/*.ipynb
+
+# Credentials — never copy these into an image
+.netrc
+*.pem

@@ -1,0 +1,142 @@
+# GEWS Multi-Site Operational Watch Configuration
+#
+# Defines several known unstable-glacier / rock-slope sites to monitor
+# continuously via `gews monitor --config config/global_watch.yaml`.
+#
+# Shared sections (acquire/process/detect/cascade/report/monitor) are
+# merged into each entry under `sites:`; a per-site section of the same
+# name overrides individual keys (shallow merge — e.g. a site can set
+# its own `detect.acceleration.sigma_threshold` without repeating the
+# rest of the `detect` block).
+
+# ---------------------------------------------------------------------
+# Shared defaults, applied to every site below unless overridden
+# ---------------------------------------------------------------------
+
+acquire:
+  platform: NISAR
+  product_types: ["GUNW", "GOFF"]
+  path_number: null
+  max_scenes: 200
+  n_workers: 4
+  # Per-site product dirs are set individually below (gunw_dir/goff_dir)
+  # so sites don't clobber each other's downloads.
+
+detect:
+  seasonal_model: "harmonic"
+  n_harmonics: 2
+  acceleration:
+    window_size_days: 60
+    step_days: 12
+    changepoint:
+      model: "rbf"
+      penalty: "bic"
+      min_segment_size: 3
+    sigma_threshold: 2.5
+  step_change:
+    sigma_threshold: 5.0
+    min_displacement_m: 0.5
+  clustering:
+    min_cluster_pixels: 5
+    max_distance_m: 200
+    min_area_m2: 10000
+  voight:
+    enabled: true
+    min_points: 5
+    r_squared_threshold: 0.7
+
+cascade:
+  min_volume_m3: 100000
+  exposure:
+    max_runout_km: 50
+    angle_of_reach_deg: 11
+    population_source: "worldpop"
+  valley_width_threshold_m: 500
+
+report:
+  output_dir: "output"
+  formats: ["html", "geojson"]
+  include_time_series_plots: true
+  include_spatial_maps: true
+  include_cascade_scenarios: true
+
+monitor:
+  # How often ASF is re-searched (also the CLI --interval default)
+  interval_hours: 6
+  # Rolling search window — NISAR products can be published days after
+  # acquisition, so this must be wider than the check interval.
+  lookback_days: 30
+  state_dir: "data/monitor_state"
+  alert_dir: "output/alerts"
+  # Alert level thresholds, as multiples of detect.acceleration.sigma_threshold
+  alert_levels:
+    INFO: 1.0
+    WARNING: 1.5
+    CRITICAL: 2.5
+
+# ---------------------------------------------------------------------
+# Sites
+# ---------------------------------------------------------------------
+
+sites:
+  - site:
+      name: "Nepal-Tibet Border 2026"
+      event_date: "2026-08-26"
+      description: >
+        Glacier-rock collapse near Tatopani, Nepal-Tibet border.
+        Confirmed retrospective case (>1,000 dead). Kept in the watch
+        list to validate continued post-event stability.
+      latitude: 28.20
+      longitude: 85.90
+      buffer_km: 15
+    acquire:
+      gunw_dir: "data/nisar/nepal_2026/gunw"
+      goff_dir: "data/nisar/nepal_2026/goff"
+
+  - site:
+      name: "Chamoli, Uttarakhand"
+      event_date: null
+      description: >
+        Nanda Devi rock-ice avalanche region (Feb 2021 Rishiganga/Dhauliganga
+        flood precedent). Steep hanging glaciers above a populated valley
+        with hydropower infrastructure — high downstream exposure.
+      latitude: 30.32
+      longitude: 79.73
+      buffer_km: 20
+    acquire:
+      gunw_dir: "data/nisar/chamoli/gunw"
+      goff_dir: "data/nisar/chamoli/goff"
+    cascade:
+      min_volume_m3: 500000  # operational threshold, not PoC
+
+  - site:
+      name: "Sedongpu Glacier, SE Tibet"
+      event_date: null
+      description: >
+        Sedongpu basin on the Yarlung Tsangpo, site of repeated large
+        glacial debris flows since 2017 driven by rock-ice avalanches
+        onto the glacier. Narrow gorge below increases dam/flood risk.
+      latitude: 29.83
+      longitude: 94.97
+      buffer_km: 20
+    acquire:
+      gunw_dir: "data/nisar/sedongpu/gunw"
+      goff_dir: "data/nisar/sedongpu/goff"
+    detect:
+      acceleration:
+        sigma_threshold: 2.0  # more sensitive: repeat-failure site
+
+  - site:
+      name: "Karakoram — Baltoro/Siachen surge zone"
+      event_date: null
+      description: >
+        Surge-type glacier cluster in the Karakoram with a history of
+        glacial lake outburst flood (GLOF) precursors. Monitored for
+        anomalous acceleration that could precede a surge-triggered
+        outburst.
+      latitude: 35.75
+      longitude: 76.35
+      buffer_km: 25
+    acquire:
+      gunw_dir: "data/nisar/karakoram/gunw"
+      goff_dir: "data/nisar/karakoram/goff"

@@ -1,0 +1,67 @@
+# GEWS Site Configuration: Weisshorn East Hanging Glacier
+#
+# Weisshorn (4,506 m), Valais, Switzerland
+# Hanging glacier above Randa village — under formal instability
+# surveillance since late June 2026. Repeated partial ice break-offs
+# on 2026-08-24. Situation still developing.
+#
+# NISAR tracks: T138 descending, T72 ascending
+# Coverage: ~Jul 1 – Sep 3, 2026 (14 GOFF, 13 GUNW products)
+
+site:
+  name: "Weisshorn East Hanging Glacier (Randa)"
+  latitude: 46.1064
+  longitude: 7.7169
+  buffer_km: 10
+  event_date: null  # ongoing / unresolved
+  description: >
+    Hanging glacier on the east face of Weisshorn above the village of
+    Randa in the Matter Valley (Zermatt approach). Under surveillance
+    since late June 2026 with repeated partial collapses in August.
+    Live forecasting test — not retrospective.
+
+acquire:
+  platform: NISAR
+  product_types: ["GUNW", "GOFF"]
+  gunw_dir: "notebooks/data/nisar/weisshorn/gunw"
+  goff_dir: "notebooks/data/nisar/weisshorn/t138_d"
+  path_number: null
+  max_scenes: 50
+  n_workers: 4
+
+detect:
+  seasonal_model: "harmonic"
+  n_harmonics: 2
+  acceleration:
+    window_size_days: 30       # shorter window — only ~2 months of data
+    step_days: 12
+    sigma_threshold: 2.0       # more sensitive for live monitoring
+    changepoint:
+      model: "rbf"
+      penalty: "bic"
+      min_segment_size: 2      # fewer epochs available
+  clustering:
+    min_cluster_pixels: 3      # smaller target area (hanging glacier)
+    max_distance_m: 300
+    min_area_m2: 5000          # relaxed — small hanging glacier
+  voight:
+    enabled: true
+    min_points: 3
+    r_squared_threshold: 0.7
+  step_change:
+    sigma_threshold: 4.0
+    min_displacement_m: 0.3
+
+cascade:
+  min_volume_m3: 50000
+  exposure:
+    max_runout_km: 10
+    angle_of_reach_deg: 14     # ice avalanches can travel far
+    population_source: "worldpop"
+  valley_width_threshold_m: 300
+
+report:
+  output_dir: "output/weisshorn"
+  formats: ["html", "geojson"]
+  include_time_series_plots: true
+  include_spatial_maps: true

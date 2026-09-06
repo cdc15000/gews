@@ -1,0 +1,142 @@
+# GEWS Site Configuration — Nepal 2026 Glacier-Rock Collapse
+# 26 August 2026, Nepal–Tibet border near Tatopani
+#
+# This configuration defines the study area, data acquisition parameters,
+# processing settings, and anomaly detection thresholds for the PoC
+# retrospective analysis.
+
+site:
+  name: "Nepal-Tibet Border 2026"
+  event_date: "2026-08-26"
+  description: >
+    Glacier-rock collapse that triggered a catastrophic flash flood
+    near the Nepal-Tibet border. More than 1,000 confirmed dead.
+    Satellite radar showed acceleration ≥7 days before collapse.
+
+  # Approximate collapse source coordinates (WGS84)
+  # Refine as post-event analyses are published
+  latitude: 28.20
+  longitude: 85.90
+  buffer_km: 15  # search radius around point
+
+acquire:
+  platform: SENTINEL-1
+  beam_mode: IW
+  processing_level: SLC
+  polarization: VV  # VV typically better for rock/ice deformation
+
+  # Temporal range for time-series analysis
+  # Wider window = better seasonal baseline; narrower = faster processing
+  start_date: "2025-01-01"
+  end_date: "2026-08-26"
+
+  # Orbit selection — prefer a single ascending or descending track
+  # for consistent viewing geometry. Set to null to auto-select
+  # the track with most scenes.
+  path_number: null
+  max_scenes: 100
+
+  # Download settings
+  output_dir: "data/slc"
+  n_workers: 4
+
+process:
+  # DEM for topographic phase removal and geometric correction
+  dem_source: "SRTM-1"  # 30m SRTM; alternatives: "COP-30", "ASTER-GDEM"
+
+  # Co-registration parameters
+  coregistration:
+    method: "geometry"  # geometry-based (ISCE-2) or intensity-based
+    number_of_bursts: null  # null = all bursts in frame
+
+  # Interferogram network
+  network:
+    method: "sequential"  # sequential, small_baseline, delaunay
+    max_temporal_baseline_days: 48  # ~4 revisit cycles
+    max_perpendicular_baseline_m: 200
+
+  # Phase unwrapping
+  unwrapping:
+    method: "snaphu"
+    init_method: "MCF"  # minimum cost flow
+    coherence_threshold: 0.4
+
+  # MintPy time-series settings
+  mintpy:
+    reference_point: "auto"  # or [lat, lon] of a known stable area
+    tropospheric_correction: "ERA5"  # ERA5 weather model; alt: "GACOS", "height_correlation"
+    min_temporal_coherence: 0.7
+    output_dir: "data/mintpy"
+
+detect:
+  # Anomaly detection parameters
+  # These control the Tier 0 screening sensitivity
+
+  # Time-series decomposition
+  seasonal_model: "harmonic"  # fit annual + semi-annual harmonics
+  n_harmonics: 2
+
+  # Acceleration detection
+  acceleration:
+    # Sliding window for acceleration estimation
+    window_size_days: 60
+    step_days: 12
+
+    # Change-point detection (PELT algorithm)
+    changepoint:
+      model: "rbf"  # radial basis function kernel
+      penalty: "bic"  # Bayesian Information Criterion for model selection
+      min_segment_size: 3  # minimum number of observations per segment
+
+    # Anomaly threshold — number of standard deviations above
+    # the site's own historical baseline
+    sigma_threshold: 2.5
+
+  # Step-change detection — catches abrupt, single-epoch displacement
+  # jumps (e.g. 3.5 m in one 12-day cycle, as in the Nepal 2026
+  # collapse) that the acceleration detector's trend model misses,
+  # since velocity decelerates after the rupture instead of climbing
+  # smoothly like Voight's law assumes.
+  step_change:
+    # Number of baseline standard deviations an inter-epoch jump
+    # must exceed to be flagged
+    sigma_threshold: 5.0
+    # Absolute minimum jump size (meters) required to flag, regardless
+    # of sigma — guards against flagging noise at very stable pixels
+    min_displacement_m: 0.5
+
+  # Spatial clustering — reject isolated anomalous pixels
+  clustering:
+    min_cluster_pixels: 5
+    max_distance_m: 200  # DBSCAN epsilon
+    min_area_m2: 10000  # ~100m × 100m minimum deforming area
+
+  # Voight's law fitting (inverse velocity trend)
+  voight:
+    enabled: true
+    min_points: 5  # minimum observations for fit
+    r_squared_threshold: 0.7  # goodness of fit to declare trend
+
+cascade:
+  # Tier 1 — cascade risk filters
+  # These are geometric/physical checks, not ML
+
+  # Minimum potentially unstable volume to flag
+  min_volume_m3: 100000  # 100,000 m³ for PoC; 500,000 in operational
+
+  # Downstream exposure check
+  exposure:
+    max_runout_km: 50  # maximum modeled runout distance
+    angle_of_reach_deg: 11  # Scheidegger empirical threshold (tan α = H/L)
+    population_source: "worldpop"  # or "landscan"
+
+  # River valley confinement
+  valley_width_threshold_m: 500  # narrow valleys increase dam risk
+
+report:
+  output_dir: "output"
+  formats: ["html", "geojson"]
+  # Generate figures for each flagged site
+  include_time_series_plots: true
+  include_spatial_maps: true
+  include_cascade_scenarios: true

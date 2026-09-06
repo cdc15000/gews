@@ -1,0 +1,249 @@
+{
+  "catalog_metadata": {
+    "created": "2026-09-05",
+    "purpose": "Multi-site validation catalog for GEWS detection pipeline (SBAS inversion -> velocity-change detection -> 51-pixel median spatial detrending -> z-score normalization -> DBSCAN clustering)",
+    "reference_validated_event": {
+      "name": "Gyirong / Bhotekoshi-Lhende Khola rock-ice avalanche (Nepal-Tibet border)",
+      "date": "2026-08-26",
+      "lat": 28.20,
+      "lon": 85.90,
+      "notes": "Pipeline already validated against this event using NISAR L-band GUNW data."
+    },
+    "key_finding_nisar_data_availability": "ASF holdings show NISAR science-mode products (RIFG/RUNW/GOFF/GUNW/GCOV/GSLC) do not appear in volume until roughly mid-to-late July 2026 (earliest broad acquisitions ~2026-07-16/17), and dense repeat coverage at the specific sites checked below only begins ~2026-08-15 through 2026-08-22. This is materially later than the 'NISAR operational since 2025' assumption. Practical consequence: essentially NONE of the mid-2025 events (Blatten, Vallunaraju, Tracy Arm) have any pre-event or co-event NISAR imagery -- they are strictly ALOS-2 (or Sentinel-1 C-band cross-check) candidates, not NISAR validation candidates, despite occurring after NISAR's 2025 launch. Only the already-validated Nepal Aug 2026 event and the currently-unfolding Weisshorn (Randa) event have usable NISAR time series."
+  },
+  "sites": [
+    {
+      "id": "weisshorn_randa_2026",
+      "name": "Weisshorn East hanging glacier (above Randa), Valais, Switzerland",
+      "priority": 1,
+      "status": "ongoing / unresolved as of catalog date",
+      "lat": 46.1064,
+      "lon": 7.7169,
+      "elevation_m_range": [3800, 4500],
+      "slope_deg_range": [45, 50],
+      "date_or_period": "Under formal instability surveillance since late June 2026; repeated partial ice break-offs (>=3 in a single day) on 2026-08-24; situation still developing as of 2026-09-05",
+      "event_type": "hanging glacier instability / partial ice avalanches, potential future large collapse",
+      "magnitude": "Multiple partial break-offs; total collapse volume not yet determined (event unresolved)",
+      "casualties": "None reported; Randa raised its municipal alert level as a precaution",
+      "nisar_coverage": {
+        "available": true,
+        "checked_via": "asf_search platform=NISAR, POINT(7.7169 46.1064)",
+        "earliest_product_date": "2026-08-15",
+        "product_count_found": 20,
+        "levels_found": ["RIFG", "RUNW", "ROFF", "GOFF", "GUNW", "GSLC", "GCOV", "SME2"],
+        "tracks": ["028/138 descending", "028/072 ascending", "028/037 descending"],
+        "notes": "Both ascending and descending geometry available -- good for resolving line-of-sight ambiguity on a steep north/east-facing slope. Coverage only spans ~3 weeks pre-catalog-date, so SBAS time series is currently short (2-3 epochs); more acquisitions needed to build a meaningful pre-failure velocity trend."
+      },
+      "suitability": "high priority, but time-critical and data-limited",
+      "expected_challenges": [
+        "Very short NISAR time series so far (~3 weeks of acquisitions) -- insufficient for robust SBAS velocity-change detection at present; needs to be re-run as new acquisitions accumulate",
+        "Steep ice/rock hanging glacier terrain -- high layover/foreshortening risk on a 45-50 degree slope viewed from a spaceborne SAR geometry; ascending+descending stacking recommended",
+        "Event is still unfolding -- 'success' cannot yet be scored against a known outcome, so this is a live forecasting test rather than a retrospective validation",
+        "Small hanging-glacier area may fall below the effective resolution/min-cluster-size the DBSCAN min_pixels setting expects; may need to loosen area threshold for this site"
+      ],
+      "success_definition": "If NISAR data through end of Aug/early Sep 2026 shows a DBSCAN-flagged, statistically significant (z-score) velocity-change cluster co-located with the known unstable hanging glacier segment before any further major collapse, that is a real-time forecasting success. This is the one site where the pipeline could be run prospectively, not just retrospectively.",
+      "sources": [
+        "https://www.swissinfo.ch/eng/glaciers-permafrost/experts-downplay-risk-from-unstable-swiss-glacier-weisshorn/91957013",
+        "https://www.swissinfo.ch/eng/various/the-valais-municipality-of-randa-raises-its-alert-level-following-glacier-break-offs/91950898",
+        "https://www.the-ski-guru.com/2026/08/26/weisshorn-hanging-glacier-randa-zermatt/"
+      ]
+    },
+    {
+      "id": "blatten_birch_glacier_2025",
+      "name": "Birch Glacier collapse / Blatten village burial, Lotschental, Valais, Switzerland",
+      "priority": 2,
+      "status": "occurred, well-studied, no NISAR data (pre-NISAR-coverage)",
+      "lat": 46.4142,
+      "lon": 7.8119,
+      "elevation_m_range": [2560, 3430],
+      "date_or_period": "2025-05-28 (collapse); precursor rockfalls/creep acceleration from Bietschhorn onto glacier for weeks prior; village evacuated 2025-05-19",
+      "event_type": "rock-ice avalanche / glacier collapse burying a village",
+      "magnitude": "~3,000,000 m3 of debris (glacier + rock); registered as a M3.1 seismic event",
+      "casualties": "1 confirmed dead (shepherd outside evacuation zone), 1 missing; ~300 residents evacuated in time, no other deaths thanks to early evacuation",
+      "nisar_coverage": {
+        "available": false,
+        "checked_via": "asf_search platform=NISAR, POINT(7.8119 46.4142), start=2025-01-01 end=2025-06-15 -> 0 results; unrestricted date search -> earliest product 2026-08-22",
+        "notes": "No NISAR acquisitions exist anywhere close to this event; NISAR's operational science-data record for this site only begins in Aug 2026, over a year after the collapse."
+      },
+      "suitability": "excellent scientific case (extremely well-instrumented precursor with published pre-collapse velocity data from GNSS/terrestrial radar/optical feature tracking), but NOT usable for NISAR validation",
+      "recommended_data_source": "ALOS-2 L-band (PALSAR-2) StripMap, ascending/descending, 2024-2025 archive; Sentinel-1 C-band as a cross-check for the faster part of the acceleration (though C-band decorrelates quickly over active ice)",
+      "expected_challenges": [
+        "No NISAR data -- must be run as an ALOS-2 validation instead, requiring separate acquisition/processing tooling",
+        "Very steep, high-relief alpine terrain with heavy layover from most viewing geometries",
+        "Glacier surface already fast-moving (0.8 to ~2 m/day pre-collapse) -- InSAR phase likely decorrelates in places the closer it gets to failure, which itself could be a detectable precursor signal (coherence-loss based, complementary to the velocity/z-score approach)",
+        "Published in-situ/ground-based data (ETH Zurich, GLAMOS, VAW) is dense enough for tight cross-validation against pipeline output"
+      ],
+      "success_definition": "Would the pipeline's velocity-change detector flag the Bietschhorn/Birch Glacier area as anomalous in ALOS-2 imagery from spring 2025 (ideally weeks before the 2025-05-19 evacuation), independently reproducing what ground instruments already showed?",
+      "sources": [
+        "https://en.wikipedia.org/wiki/2025_Blatten_glacier_collapse",
+        "https://eos.org/thelandslideblog/blatten-birch-glacier-5",
+        "https://www.antarcticglaciers.org/2025/05/birch-glacier-landslide/"
+      ]
+    },
+    {
+      "id": "vallunaraju_peru_2025",
+      "name": "Vallunaraju rockfall-triggered GLOF, Cordillera Blanca, Peru",
+      "priority": 3,
+      "status": "occurred, no NISAR data",
+      "lat": -9.4222,
+      "lon": -77.4564,
+      "elevation_m_range": [4600, 5680],
+      "date_or_period": "2025-04-28",
+      "event_type": "rockfall into proglacial lake -> glacier lake outburst flood (GLOF) / debris flow cascade",
+      "magnitude": "~43,000 m3 released from lake drainage; small by rock-avalanche standards but high-consequence due to downstream city",
+      "casualties": "Multiple deaths reported; dozens of homes damaged/destroyed in Huaraz",
+      "nisar_coverage": {
+        "available": false,
+        "checked_via": "asf_search platform=NISAR, POINT(-77.4564 -9.4222), start=2025-01-01 end=2025-05-15 -> 0 results; unrestricted -> earliest product 2026-08-18",
+        "notes": "Same pre-NISAR-coverage gap as Blatten."
+      },
+      "suitability": "marginal for this pipeline -- the triggering rockfall source area is small and rock (not glacier ice), and the primary hazard chain (lake drainage/debris flow) is hydrological rather than a slow-creeping mass the SBAS/velocity pipeline is built to catch",
+      "recommended_data_source": "ALOS-2 L-band if precursor creep on the rockfall source slope needs to be tested; otherwise better suited to optical/lake-area monitoring than InSAR velocity detection",
+      "expected_challenges": [
+        "No NISAR data",
+        "Very small triggering rockfall volume -- likely below the pipeline's effective minimum detectable mass/area given the 51-pixel filter and DBSCAN min_pixels settings",
+        "High-relief tropical Andes terrain with rapid snow/ice melt noise",
+        "Event driven more by lake configuration change than by a long precursor creep signal -- may not have a multi-week velocity precursor to detect at all"
+      ],
+      "success_definition": "Lower priority: mainly useful as a negative/edge case to characterize the pipeline's minimum detectable event size, not as a strong positive validation target.",
+      "sources": [
+        "https://eos.org/thelandslideblog/vallunaraju-1",
+        "https://www.nature.com/articles/s44304-026-00229-0"
+      ]
+    },
+    {
+      "id": "tracy_arm_alaska_2025",
+      "name": "Tracy Arm fjord landslide / South Sawyer Glacier megatsunami, Alaska",
+      "priority": 4,
+      "status": "occurred, no NISAR data",
+      "lat": 57.9114,
+      "lon": -133.4022,
+      "date_or_period": "2025-08-10",
+      "event_type": "rock avalanche (not ice) into a fjord, preconditioned by glacier retreat; generated a 481 m runup megatsunami",
+      "magnitude": "~64,000,000 m3 rock; seismic signal equivalent to M5.4",
+      "casualties": "None (occurred before cruise ships arrived for the day)",
+      "nisar_coverage": {
+        "available": false,
+        "checked_via": "asf_search platform=NISAR, POINT(-133.4022 57.9114), start=2025-01-01 end=2025-08-20 -> 0 results; unrestricted -> earliest product 2026-08-22",
+        "notes": "Same pre-NISAR-coverage gap."
+      },
+      "suitability": "borderline for THIS pipeline: this is a rock slope failure exposed by glacier retreat, not a glacier-ice collapse per se, but it is exactly the class of 'deglaciation-destabilized slope' GEWS aims to flag, and it has an unusually good precursor record (days of escalating microseismicity before failure)",
+      "recommended_data_source": "ALOS-2 L-band ascending/descending over the Tracy Arm headwall; note Alaska has generally sparse ALOS-2 archive coverage compared to High Mountain Asia and the Alps, so archive availability should be checked before committing",
+      "expected_challenges": [
+        "No NISAR data",
+        "Steep fjord-wall terrain with narrow SAR viewing geometries -- severe layover likely from many look directions",
+        "Remote/cloud-prone Southeast Alaska reduces optical cross-validation options",
+        "ALOS-2 archive density over this specific fjord is unconfirmed and may be thin"
+      ],
+      "success_definition": "Would the pipeline detect accelerating rock-mass creep on the failed slope in the weeks before 2025-08-10, matching the documented pre-failure microseismicity escalation timeline?",
+      "sources": [
+        "https://www.usgs.gov/programs/landslide-hazards/science/2025-tracy-arm-landslide-generated-tsunami",
+        "https://www.science.org/doi/10.1126/science.aec3187",
+        "https://www.gi.alaska.edu/news/study-2025-alaska-landslide-and-tsunami-contains-warnings"
+      ]
+    },
+    {
+      "id": "gyirong_precursor_2024",
+      "name": "Gyirong / Bhotekoshi valley rock-ice avalanche (precursor to the validated 2026 event, same location)",
+      "priority": 5,
+      "status": "occurred, pre-NISAR (ALOS-2 candidate); same site as the already-validated 2026 event",
+      "lat": 28.20,
+      "lon": 85.90,
+      "date_or_period": "2024-07 (reported precursor rock-ice avalanche in the same area)",
+      "event_type": "rock-ice avalanche",
+      "magnitude": "Not yet quantified in sources reviewed",
+      "casualties": "Not reported as significant in sources reviewed",
+      "nisar_coverage": {
+        "available": false,
+        "notes": "Predates NISAR entirely; would require ALOS-2 or Sentinel-1."
+      },
+      "suitability": "high scientific value: same site as the confirmed 2026 detection, so an ALOS-2 run here tests whether the site was ALREADY showing anomalous creep two years before the catastrophic 2026 collapse -- i.e., whether the hazard was flaggable far earlier than the NISAR record alone would suggest",
+      "expected_challenges": [
+        "No NISAR data -- ALOS-2 only",
+        "Need to establish precise source-area geometry for the 2024 event, which is less well documented in English-language sources than the 2026 disaster",
+        "High Himalaya terrain, seasonal monsoon cloud cover irrelevant to SAR but relevant to any optical cross-check"
+      ],
+      "success_definition": "If ALOS-2 time series 2023-2024 shows a velocity-change anomaly in the same cluster location later flagged by the validated NISAR run for 2026, this demonstrates multi-year lead time potential for the pipeline.",
+      "sources": [
+        "https://www.icimod.org/kyirong-rasuwa-flood-2026-nepal-china-border/",
+        "https://en.wikipedia.org/wiki/2026_Nepal%E2%80%93Tibet_floods"
+      ]
+    },
+    {
+      "id": "chamoli_2021",
+      "name": "Chamoli (Ronti Peak) rock-ice avalanche, Uttarakhand, India",
+      "priority": 6,
+      "status": "historical / ALOS-2 candidate",
+      "lat": 30.42,
+      "lon": 79.73,
+      "elevation_m": 5500,
+      "date_or_period": "2021-02-07",
+      "event_type": "rock-ice avalanche -> long-runout debris flow -> flood cascade",
+      "magnitude": "~26.9 x 10^6 m3 rock+ice detachment; travel distance >17.6 km, elevation drop 4300 m",
+      "casualties": ">200 killed or missing; two hydropower projects destroyed",
+      "nisar_coverage": {"available": false, "notes": "Predates NISAR by ~5 years; ALOS-2 (operating since 2014) is the correct sensor."},
+      "suitability": "excellent -- one of the most thoroughly studied rock-ice avalanches in the literature, including a published pre-collapse motion / precursor-detection study (Nature Hazards and Earth System Sciences) that used satellite geodesy to show measurable pre-failure displacement",
+      "expected_challenges": [
+        "ALOS-2 archive coverage over this part of the Garhwal Himalaya needs to be confirmed for the 2019-2021 window",
+        "Existing published precursor-motion analysis provides a strong independent benchmark to validate pipeline output against -- this is close to a 'known-answer' test",
+        "High relief, seasonal snow cover complicate coherence in places"
+      ],
+      "success_definition": "Pipeline should reproduce (or come close to) the pre-collapse displacement signal already published by Kumar et al. / ESA teams for the Ronti Peak source area using independent processing.",
+      "sources": [
+        "https://nhess.copernicus.org/articles/22/3309/2022/",
+        "https://www.science.org/doi/10.1126/science.abh4455",
+        "https://www.esa.int/Applications/Observing_the_Earth/Satellites_reveal_cause_of_Chamoli_disaster"
+      ]
+    },
+    {
+      "id": "sedongpu_tibet_recurring",
+      "name": "Sedongpu Glacier recurring collapses / Yarlung Tsangpo river blockages, SE Tibet",
+      "priority": 7,
+      "status": "historical, recurring / ALOS-2 candidate",
+      "lat": 29.83,
+      "lon": 95.07,
+      "date_or_period": "Recurring: Oct/Nov/Dec 2017, Jan/Jul 2018 (major detachment ~130x10^6 m3 blocking the Yarlung Tsangpo for ~60 hours), Mar 2021 (~50x10^6 m3)",
+      "event_type": "recurring glacier detachment / ice-rock avalanche causing river damming",
+      "magnitude": "Multiple events 50-130 x 10^6 m3; subsequent bed erosion of ~335x10^6 m3 measured 2018-2022",
+      "casualties": ">6000 residents relocated after 2018 event; river blockage threatened roads and hydropower",
+      "nisar_coverage": {"available": false, "notes": "All known major events predate NISAR; site already has a published early-warning radar system (NHESS 2023) that could be used as ground truth."},
+      "suitability": "excellent as a recurring/multi-event ALOS-2 time series case -- tests whether the pipeline can catch a SEQUENCE of collapses at one persistently unstable site, and there is already a dedicated early-warning-system paper against which to benchmark",
+      "expected_challenges": [
+        "Extremely dynamic terrain with repeated large-scale morphology changes between events, complicating SBAS coherence across the full multi-year record",
+        "Remote SE Tibet; ALOS-2 archive density should be checked",
+        "Existing site-specific early warning system (NHESS 2023) provides a strong comparison baseline"
+      ],
+      "success_definition": "Pipeline should flag anomalous velocity/creep in the lead-up to at least the well-documented Oct 2018 detachment and the Mar 2021 event using ALOS-2 archive data.",
+      "sources": [
+        "https://nhess.copernicus.org/articles/23/3015/2023/",
+        "https://tc.copernicus.org/articles/17/2533/2023/",
+        "https://tc.copernicus.org/articles/19/4487/2025/"
+      ]
+    },
+    {
+      "id": "aru_glacier_tibet_2016",
+      "name": "Aru Range twin glacier collapses (Aru-1 and Aru-2), western Tibet",
+      "priority": 8,
+      "status": "historical / ALOS-2 candidate",
+      "lat": 34.0,
+      "lon": 82.2,
+      "date_or_period": "2016-07-17 (Aru-1); 2016-09-21 (Aru-2)",
+      "event_type": "gigantic glacier detachment (twin events, same glacier system)",
+      "magnitude": "~68 x 10^6 m3 (Aru-1); debris ran out ~7 km into Aru Co lake, generating a ~20 m lake tsunami",
+      "casualties": "9 herders killed (Aru-1)",
+      "nisar_coverage": {"available": false, "notes": "Predates NISAR by ~9 years; classic ALOS-2 case, and ALOS-2 was operating and has been used in the published mechanism studies already."},
+      "suitability": "excellent -- the original benchmark case in the glacier-detachment literature (Kaab et al. 2018, The Cryosphere) with a documented pre-collapse basal lubrication / englacial hydrology mechanism; twin collapses (2 months apart at the same site) give a natural repeat-test",
+      "expected_challenges": [
+        "Remote, high-altitude, low-population western Tibet -- limited independent ground validation data compared to Chamoli/Sedongpu",
+        "Flat-topped, low-relief plateau glacier morphology is actually favorable for InSAR (less layover than steep alpine cases) but coherence over a two-month gap between Aru-1 and Aru-2 should be checked",
+        "ALOS-2 archive availability circa 2016 should be confirmed (early in ALOS-2 mission)"
+      ],
+      "success_definition": "Pipeline should detect anomalous pre-collapse velocity at Aru-1 in spring/early-summer 2016, and ideally show the site remaining or becoming re-anomalous before the Aru-2 event two months later.",
+      "sources": [
+        "https://tc.copernicus.org/articles/12/2883/2018/",
+        "https://tc.copernicus.org/articles/15/199/2021/",
+        "https://blogs.agu.org/landslideblog/2016/10/24/tibet-avalanches-1/"
+      ]
+    }
+  ]
+}

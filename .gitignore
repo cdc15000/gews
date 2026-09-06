@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+gews/lib/
+gews/bin/
+gews/include/
+gews/pyvenv.cfg
+
+# Data — large satellite products
+notebooks/data/nisar/
+*.h5
+*.hdf5
+
+# Output artifacts
+output/
+notebooks/output/
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Credentials (never commit)
+.netrc
+*.netrc
+
+# Temporary
+/tmp/
+*.tmp
+
+# Monitor state (runtime-generated)
+data/monitor_state/

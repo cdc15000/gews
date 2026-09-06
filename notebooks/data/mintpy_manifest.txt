@@ -1,0 +1,15 @@
+2707104 mintpy/avgPhaseVelocity.h5
+2706816 mintpy/avgSpatialCoh.h5
+2708432 mintpy/demErr.h5
+683648 mintpy/maskConnComp.h5
+690968 mintpy/maskTempCoh.h5
+2707744 mintpy/numInvIfgram.h5
+2707096 mintpy/numTriNonzeroIntAmbiguity.h5
+25486 mintpy/smallbaselineApp.cfg
+2707824 mintpy/temporalCoherence.h5
+129177688 mintpy/timeseries_tropHgt_demErr.h5
+129181320 mintpy/timeseries_tropHgt.h5
+129181336 mintpy/timeseries.h5
+129108696 mintpy/timeseriesResidual_ramp.h5
+129177688 mintpy/timeseriesResidual.h5
+13500592 mintpy/velocity.h5

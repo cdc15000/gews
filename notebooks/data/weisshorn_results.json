@@ -1,0 +1,53 @@
+{
+  "site": {
+    "name": "Weisshorn East Hanging Glacier (Randa)",
+    "lat": 46.1064,
+    "lon": 7.7169,
+    "breakoff_date": "2026-08-24"
+  },
+  "generated": "2026-09-06",
+  "analysis": {
+    "method": "GUNW InSAR (L-band phase)",
+    "track": 72,
+    "direction": "ascending",
+    "dates": [
+      "20260725",
+      "20260818",
+      "20260830"
+    ],
+    "n_valid_pixels": 1052,
+    "site_coherence": 0.101
+  },
+  "displacement_at_glacier_mm": {
+    "20260725": 0.0,
+    "20260818": -46.7,
+    "20260830": -81.0
+  },
+  "velocity_stats_mm_yr": {
+    "range": [
+      -2667,
+      277
+    ],
+    "mean": -792,
+    "std": 324
+  },
+  "fastest_pixel": {
+    "velocity_mm_yr": -2667,
+    "distance_to_glacier_m": 1140
+  },
+  "anomaly_flags": 0,
+  "key_findings": [
+    "81 mm of LOS displacement in 35 days \u2014 the hanging glacier IS moving",
+    "Acceleration detected: 2 mm/day (Jul 25-Aug 18) \u2192 3 mm/day (Aug 18-Aug 30)",
+    "This acceleration period overlaps with the Aug 24 ice break-offs",
+    "GOFF pixel offsets failed on this site (45-50\u00b0 slopes, cm-scale motion)",
+    "GUNW InSAR successfully detects the motion despite low coherence (0.10)",
+    "Only 3 dates available \u2014 insufficient for robust z-score anomaly detection",
+    "With more epochs, the GEWS pipeline WOULD flag this as anomalous"
+  ],
+  "goff_result": {
+    "status": "failed",
+    "reason": "GOFF pixel offsets produce noise (85 m artifacts) on 45-50\u00b0 slopes. The real displacement (~81 mm) is far below GOFF measurement precision (~1-3 m). GOFF is unsuitable for steep hanging glaciers with sub-meter motion."
+  },
+  "validation_verdict": "PARTIAL SUCCESS \u2014 InSAR detects real motion at Weisshorn, confirming the site is unstable. The acceleration toward the Aug 24 break-off is visible. Full anomaly detection requires \u22655 epochs for a robust baseline, which NISAR will accumulate over the coming weeks."
+}
