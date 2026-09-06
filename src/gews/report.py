@@ -264,6 +264,9 @@ def _export_geojson(
                 flag.voight_fit["days_until_failure"], 1
             )
 
+        if flag.timeseries is not None:
+            props["timeseries"] = flag.timeseries
+
         assessment = assessment_map.get(flag.flag_id)
         if assessment:
             props["risk_level"] = assessment.risk_level.value

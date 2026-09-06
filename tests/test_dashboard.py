@@ -302,3 +302,102 @@ class TestHandlerClassify:
         assert "Watch" in VALID_CLASSIFICATIONS
         assert "Warning" in VALID_CLASSIFICATIONS
         assert "Cleared" in VALID_CLASSIFICATIONS
+
+
+class TestTimeseriesInGeojson:
+    """Tests for timeseries data flowing through GeoJSON and dashboard."""
+
+    def test_load_flags_preserves_timeseries(self, tmp_path):
+        """Timeseries data in geojson survives load_flags and sanitization."""
+        from gews.dashboard import load_flags
+
+        ts = {"dates": ["2026-01-01", "2026-01-13"], "values": [0.0, 0.0023]}
+        geojson = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": [85.9, 28.2]},
+                    "properties": {
+                        "flag_id": 1,
+                        "score": 4.0,
+                        "timeseries": ts,
+                    },
+                },
+            ],
+        }
+        (tmp_path / "flags.geojson").write_text(json.dumps(geojson))
+
+        flags = load_flags(tmp_path)
+        assert len(flags) == 1
+        assert flags[0]["timeseries"]["dates"] == ts["dates"]
+        assert flags[0]["timeseries"]["values"] == ts["values"]
+
+    def test_export_geojson_includes_timeseries(self, tmp_path):
+        """_export_geojson writes timeseries when present on flag."""
+        import numpy as np
+
+        from gews.detect import AnomalyFlag
+        from gews.report import _export_geojson
+
+        flag = AnomalyFlag(
+            flag_id=0,
+            score=3.5,
+            peak_zscore=4.0,
+            mean_zscore=2.5,
+            n_pixels=10,
+            area_m2=9000.0,
+            center_lat=28.2,
+            center_lon=85.9,
+            peak_lat=28.21,
+            peak_lon=85.91,
+            acceleration_m_yr2=0.05,
+            pixel_indices=np.array([[0, 0]]),
+            window_index=0,
+            window_date=738886.0,
+            timeseries={
+                "dates": ["2026-01-01", "2026-01-13", "2026-01-25"],
+                "values": [0.0, 0.0012, 0.0031],
+            },
+        )
+
+        path = _export_geojson([flag], None, tmp_path)
+        text = path.read_text()
+
+        # No NaN tokens in the file
+        assert "NaN" not in text
+
+        parsed = json.loads(text)
+        props = parsed["features"][0]["properties"]
+        assert "timeseries" in props
+        assert props["timeseries"]["dates"] == ["2026-01-01", "2026-01-13", "2026-01-25"]
+        assert props["timeseries"]["values"] == [0.0, 0.0012, 0.0031]
+
+    def test_export_geojson_omits_timeseries_when_none(self, tmp_path):
+        """_export_geojson does not include timeseries key when flag has None."""
+        import numpy as np
+
+        from gews.detect import AnomalyFlag
+        from gews.report import _export_geojson
+
+        flag = AnomalyFlag(
+            flag_id=0,
+            score=3.5,
+            peak_zscore=4.0,
+            mean_zscore=2.5,
+            n_pixels=10,
+            area_m2=9000.0,
+            center_lat=28.2,
+            center_lon=85.9,
+            peak_lat=28.21,
+            peak_lon=85.91,
+            acceleration_m_yr2=0.05,
+            pixel_indices=np.array([[0, 0]]),
+            window_index=0,
+            window_date=738886.0,
+        )
+
+        path = _export_geojson([flag], None, tmp_path)
+        parsed = json.loads(path.read_text())
+        props = parsed["features"][0]["properties"]
+        assert "timeseries" not in props

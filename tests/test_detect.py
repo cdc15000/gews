@@ -162,3 +162,59 @@ class TestDetectAnomalies:
         )
 
         assert len(flags_high) <= len(flags_low)
+
+
+class TestTimeseriesPopulation:
+    """Tests for displacement time-series population on flags."""
+
+    def _make_displacement(self, accel_map, n_rows=50, n_cols=60):
+        """Create synthetic displacement matching the accel_map grid."""
+        rng = np.random.default_rng(99)
+        n_epochs = len(accel_map.window_centers)
+        dates = accel_map.window_centers.copy()
+        displacement = rng.normal(0, 0.01, (n_epochs, n_rows, n_cols))
+        # Add a ramp at the anomaly location
+        for i in range(n_epochs):
+            displacement[i, 20:28, 25:33] += 0.002 * i
+        return dates, displacement
+
+    def test_timeseries_populated_with_displacement(self):
+        """When dates and displacement are supplied, surviving flags
+        have timeseries dicts with parallel dates/values arrays."""
+        accel_map = _make_accel_map(inject_anomaly=True)
+        lat, lon = _make_coords()
+        config = _make_config(sigma=2.5, min_pixels=3)
+        dates, displacement = self._make_displacement(accel_map)
+
+        flags = detect_anomalies(
+            accel_map, lat, lon, config,
+            dates=dates, displacement=displacement,
+        )
+
+        assert len(flags) > 0
+        top = flags[0]
+        assert top.timeseries is not None
+        assert len(top.timeseries["dates"]) == len(top.timeseries["values"])
+        assert len(top.timeseries["dates"]) > 0
+
+        # Dates should be ISO format strings
+        for d in top.timeseries["dates"]:
+            assert isinstance(d, str)
+            assert len(d) == 10  # YYYY-MM-DD
+
+        # Values should be finite floats
+        for v in top.timeseries["values"]:
+            assert isinstance(v, float)
+            assert np.isfinite(v)
+
+    def test_timeseries_none_without_displacement(self):
+        """Without dates/displacement, timeseries stays None."""
+        accel_map = _make_accel_map(inject_anomaly=True)
+        lat, lon = _make_coords()
+        config = _make_config(sigma=2.5, min_pixels=3)
+
+        flags = detect_anomalies(accel_map, lat, lon, config)
+
+        assert len(flags) > 0
+        for flag in flags:
+            assert flag.timeseries is None
