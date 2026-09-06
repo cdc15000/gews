@@ -5,7 +5,9 @@ import pytest
 
 from gews.timeseries import (
     AccelerationMap,
+    ChangePointResult,
     DecomposedPixel,
+    bocpd_changepoints,
     compute_acceleration_map,
     decompose_pixel,
     fit_voight,
@@ -213,3 +215,114 @@ class TestVoight:
 
         result = fit_voight(dates, velocity, min_points=5)
         assert result is None
+
+
+class TestBOCPD:
+    """Tests for Bayesian Online Changepoint Detection."""
+
+    def _make_dates(self, n=80, start=738886, step=12):
+        """Generate evenly spaced ordinal dates."""
+        return np.arange(start, start + n * step, step, dtype=float)
+
+    def test_step_change_in_velocity(self):
+        """BOCPD should detect a step change in velocity (slope change in displacement)."""
+        dates = self._make_dates(80)
+        t_days = dates - dates[0]
+
+        # First half: velocity = 0.001 m/day
+        # Second half: velocity = 0.005 m/day (5x faster)
+        changepoint_idx = 40
+        displacement = np.where(
+            np.arange(len(dates)) < changepoint_idx,
+            0.001 * t_days,
+            0.001 * t_days[changepoint_idx] + 0.005 * (t_days - t_days[changepoint_idx]),
+        )
+
+        # Add small noise
+        rng = np.random.default_rng(42)
+        displacement += rng.normal(0, 0.0005, len(displacement))
+
+        result = bocpd_changepoints(dates, displacement, hazard_rate=1 / 50)
+
+        assert isinstance(result, ChangePointResult)
+        assert len(result.changepoint_indices) > 0
+
+        # At least one detected changepoint should be within a window
+        # around the true changepoint (BOCPD may lag by a few epochs)
+        detected = result.changepoint_indices
+        near_true = np.any(
+            (detected >= changepoint_idx - 5) & (detected <= changepoint_idx + 10)
+        )
+        assert near_true, (
+            f"Expected changepoint near index {changepoint_idx}, "
+            f"got {detected}"
+        )
+
+    def test_smooth_acceleration_onset(self):
+        """BOCPD should detect the onset of smooth acceleration (quadratic ramp)."""
+        dates = self._make_dates(100)
+        t_days = dates - dates[0]
+
+        # Constant velocity for first 60 epochs, then quadratic acceleration
+        onset_idx = 60
+        displacement = 0.001 * t_days.copy()
+        for i in range(onset_idx, len(dates)):
+            t_since = (t_days[i] - t_days[onset_idx]) / 365.25
+            displacement[i] += 0.1 * t_since ** 2
+
+        rng = np.random.default_rng(123)
+        displacement += rng.normal(0, 0.0003, len(displacement))
+
+        result = bocpd_changepoints(
+            dates, displacement, hazard_rate=1 / 30, threshold=0.15,
+        )
+
+        assert isinstance(result, ChangePointResult)
+        assert len(result.changepoint_indices) > 0
+
+        # The earliest detected changepoint should be near or after the
+        # onset (BOCPD lags gradual changes by several epochs)
+        earliest = result.changepoint_indices[0]
+        assert earliest >= onset_idx - 5, (
+            f"Earliest changepoint {earliest} is too far before onset {onset_idx}"
+        )
+        assert earliest <= onset_idx + 25, (
+            f"Earliest changepoint {earliest} is too far after onset {onset_idx}"
+        )
+
+    def test_no_changepoint(self):
+        """Constant velocity with noise should produce no changepoints."""
+        dates = self._make_dates(60)
+        t_days = dates - dates[0]
+
+        # Pure linear trend + small noise
+        displacement = 0.002 * t_days
+        rng = np.random.default_rng(99)
+        displacement += rng.normal(0, 0.001, len(displacement))
+
+        result = bocpd_changepoints(dates, displacement, hazard_rate=1 / 100)
+
+        assert isinstance(result, ChangePointResult)
+        assert len(result.changepoint_indices) == 0
+        assert len(result.most_likely_changepoints) == 0
+
+    def test_output_shapes(self):
+        """Output arrays should have correct shapes."""
+        n = 50
+        dates = self._make_dates(n)
+        displacement = np.linspace(0, 1, n)
+
+        result = bocpd_changepoints(dates, displacement)
+
+        assert result.run_length_posterior.shape == (n, n + 1)
+        assert result.changepoint_probabilities.shape == (n,)
+
+    def test_short_series(self):
+        """Series with fewer than 3 points should return empty results."""
+        dates = np.array([0.0, 12.0])
+        displacement = np.array([0.0, 0.01])
+
+        result = bocpd_changepoints(dates, displacement)
+
+        assert len(result.changepoint_indices) == 0
+        assert result.run_length_posterior.shape == (2, 3)

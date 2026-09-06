@@ -33,6 +33,13 @@ detect:
       penalty: "bic"
       min_segment_size: 3
     sigma_threshold: 2.5
+  # BOCPD changepoint detection (opt-in — uncomment to enable)
+  # changepoint:
+  #   method: "bocpd"
+  #   hazard_rate: 0.01
+  #   threshold: 0.25
+  #   prior_variance: null
+  #   min_displacement_range_m: 0.01
   step_change:
     sigma_threshold: 5.0
     min_displacement_m: 0.5

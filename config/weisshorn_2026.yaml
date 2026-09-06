@@ -40,6 +40,13 @@ detect:
       model: "rbf"
       penalty: "bic"
       min_segment_size: 2      # fewer epochs available
+  # BOCPD changepoint detection (opt-in — uncomment to enable)
+  # changepoint:
+  #   method: "bocpd"
+  #   hazard_rate: 0.02          # shorter expected runs for live monitoring
+  #   threshold: 0.20            # more sensitive for active surveillance
+  #   prior_variance: null       # auto-estimate from data
+  #   min_displacement_range_m: 0.005
   clustering:
     min_cluster_pixels: 3      # smaller target area (hanging glacier)
     max_distance_m: 300

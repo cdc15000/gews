@@ -92,6 +92,18 @@ detect:
     # the site's own historical baseline
     sigma_threshold: 2.5
 
+  # Bayesian Online Changepoint Detection (BOCPD) — Adams & MacKay 2007.
+  # Detects regime changes in deformation rate per pixel, complementing
+  # the acceleration z-score and step-change detectors. Opt-in: set
+  # method to "bocpd" to enable. The acceleration.changepoint block
+  # above is the older PELT placeholder (not yet implemented).
+  # changepoint:
+  #   method: "bocpd"
+  #   hazard_rate: 0.01          # 1/expected_run_length — prior P(changepoint)
+  #   threshold: 0.25            # minimum P(r=0) to flag a changepoint
+  #   prior_variance: null       # null = auto-estimate from data (MAD-based)
+  #   min_displacement_range_m: 0.01  # skip near-static pixels (cost guard)
+
   # Step-change detection — catches abrupt, single-epoch displacement
   # jumps (e.g. 3.5 m in one 12-day cycle, as in the Nepal 2026
   # collapse) that the acceleration detector's trend model misses,

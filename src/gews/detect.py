@@ -23,7 +23,12 @@ import numpy as np
 from scipy import ndimage
 from sklearn.cluster import DBSCAN
 
-from gews.timeseries import AccelerationMap, detect_step_changes, fit_voight
+from gews.timeseries import (
+    AccelerationMap,
+    bocpd_changepoints,
+    detect_step_changes,
+    fit_voight,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -215,6 +220,23 @@ def detect_anomalies(
         )
         all_flags.extend(step_flags)
         flag_id += len(step_flags)
+
+    # BOCPD changepoint detection: when enabled via config
+    # (detect.changepoint.method == "bocpd"), runs Bayesian Online
+    # Changepoint Detection per pixel and flags spatial clusters
+    # where changepoints coincide. Opt-in — existing methods remain
+    # the default.
+    cp_config = det.get("changepoint", {})
+    if (
+        cp_config.get("method") == "bocpd"
+        and dates is not None
+        and displacement is not None
+    ):
+        bocpd_flags = _detect_bocpd_anomalies(
+            dates, displacement, latitude, longitude, config, flag_id,
+        )
+        all_flags.extend(bocpd_flags)
+        flag_id += len(bocpd_flags)
 
     # Deduplicate: if the same spatial cluster appears in multiple
     # time windows (or across detectors), keep only the
@@ -464,6 +486,168 @@ def _detect_step_change_anomalies(
 
             flags.append(flag)
             flag_id += 1
+
+    return flags
+
+
+def _detect_bocpd_anomalies(
+    dates: np.ndarray,
+    displacement: np.ndarray,
+    latitude: np.ndarray,
+    longitude: np.ndarray,
+    config: dict,
+    start_flag_id: int,
+) -> list[AnomalyFlag]:
+    """
+    Tier 0 screening using Bayesian Online Changepoint Detection.
+
+    Runs BOCPD (Adams & MacKay 2007) per pixel on the displacement
+    time series to detect regime changes in deformation rate. Pixels
+    whose changepoint probability exceeds the configured threshold at
+    the same epoch are clustered spatially and emitted as flags.
+
+    Parameters
+    ----------
+    dates : np.ndarray
+        Acquisition dates as ordinal days, shape [n_epochs].
+    displacement : np.ndarray
+        Raw LOS displacement in meters, shape [n_epochs, n_rows, n_cols].
+    latitude, longitude : np.ndarray
+        Coordinate grids, shape [n_rows, n_cols].
+    config : dict
+        Detection configuration (from config YAML 'detect' section).
+    start_flag_id : int
+        First flag_id to assign.
+
+    Returns
+    -------
+    list[AnomalyFlag]
+        BOCPD flags, each tagged detection_details["tag"] == "bocpd".
+    """
+    det = config["detect"]
+    cp_config = det.get("changepoint", {})
+    hazard_rate = cp_config.get("hazard_rate", 1 / 100)
+    prior_variance = cp_config.get("prior_variance", None)
+    threshold = cp_config.get("threshold", 0.25)
+    clust = det["clustering"]
+    min_pixels = clust["min_cluster_pixels"]
+    min_area = clust["min_area_m2"]
+
+    n_epochs, n_rows, n_cols = displacement.shape
+
+    logger.info(
+        "Running BOCPD changepoint detection: %d epochs, %d×%d pixels, "
+        "hazard_rate=%.4f, threshold=%.2f",
+        n_epochs, n_rows, n_cols, hazard_rate, threshold,
+    )
+
+    # Per-pixel changepoint probability map: for each epoch, the
+    # maximum changepoint probability across all pixels that fire there.
+    cp_prob_map = np.zeros((n_epochs, n_rows, n_cols))
+
+    # Skip pixels whose displacement range is below a floor (cost guard
+    # for large scenes — BOCPD is O(n²) per pixel in a Python loop).
+    disp_range = np.nanmax(displacement, axis=0) - np.nanmin(displacement, axis=0)
+    min_range = cp_config.get("min_displacement_range_m", 0.0)
+
+    for row in range(n_rows):
+        for col in range(n_cols):
+            if disp_range[row, col] < min_range:
+                continue
+            pixel_disp = displacement[:, row, col]
+            if np.sum(np.isfinite(pixel_disp)) < 3:
+                continue
+
+            result = bocpd_changepoints(
+                dates,
+                pixel_disp,
+                hazard_rate=hazard_rate,
+                prior_variance=prior_variance,
+                threshold=threshold,
+            )
+            cp_prob_map[:, row, col] = result.changepoint_probabilities
+
+    pixel_area = _estimate_pixel_area(latitude, longitude)
+
+    flags: list[AnomalyFlag] = []
+    flag_id = start_flag_id
+
+    for e in range(n_epochs):
+        anomalous = cp_prob_map[e] > threshold
+        if not np.any(anomalous):
+            continue
+
+        clusters = _cluster_anomalous_pixels(
+            anomalous,
+            latitude,
+            longitude,
+            max_distance_m=clust["max_distance_m"],
+            min_samples=min_pixels,
+        )
+
+        for cluster_label in np.unique(clusters):
+            if cluster_label == -1:
+                continue
+
+            mask = clusters == cluster_label
+            n_pix = np.count_nonzero(mask)
+            area = n_pix * pixel_area
+
+            if n_pix < min_pixels or area < min_area:
+                continue
+
+            rows, cols = np.where(mask)
+            probs = cp_prob_map[e][mask]
+
+            peak_idx = np.argmax(probs)
+            peak_row, peak_col = rows[peak_idx], cols[peak_idx]
+
+            mean_prob = float(np.mean(probs))
+            peak_prob = float(np.max(probs))
+
+            # Express in units of the threshold so the score scale is
+            # comparable to acceleration z-scores and step-change scores.
+            unit = threshold if threshold > 0 else 1.0
+            peak_score_units = peak_prob / unit
+            mean_score_units = mean_prob / unit
+
+            spatial_weight = np.log10(max(1, area))
+            score = (
+                peak_score_units * 0.5
+                + mean_score_units * 0.3
+                + spatial_weight * 0.2
+            )
+
+            flag = AnomalyFlag(
+                flag_id=flag_id,
+                score=score,
+                peak_zscore=peak_score_units,
+                mean_zscore=mean_score_units,
+                n_pixels=n_pix,
+                area_m2=float(area),
+                center_lat=float(np.mean(latitude[mask])),
+                center_lon=float(np.mean(longitude[mask])),
+                peak_lat=float(latitude[peak_row, peak_col]),
+                peak_lon=float(longitude[peak_row, peak_col]),
+                acceleration_m_yr2=float("nan"),
+                pixel_indices=np.column_stack([rows, cols]),
+                window_index=e,
+                window_date=float(dates[e]),
+                detection_details={
+                    "tag": "bocpd",
+                    "hazard_rate": hazard_rate,
+                    "threshold": threshold,
+                    "peak_changepoint_probability": peak_prob,
+                },
+            )
+
+            flags.append(flag)
+            flag_id += 1
+
+    logger.info(
+        "BOCPD detection complete: %d flagged clusters",
+        len(flags),
+    )
 
     return flags
 
