@@ -1,0 +1,31 @@
+[Unit]
+Description=GEWS Glacier Early Warning System — continuous monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=gews
+WorkingDirectory=/opt/gews
+ExecStart=/opt/gews/venv/bin/gews monitor -c /opt/gews/config/global_watch.yaml --interval 6
+Restart=on-failure
+RestartSec=60
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gews-monitor
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/gews/data /opt/gews/output
+
+# Environment (alternatively use EnvironmentFile)
+# EnvironmentFile=/opt/gews/.env
+# Environment=GEWS_SMTP_USER=...
+# Environment=GEWS_SMTP_PASS=...
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+# GEWS single check cycle — runs every 6 hours
+# Install: crontab -l | cat - deploy/cron/gews-check.cron | crontab -
+#
+# Adjust paths below to match your installation.
+# Logs are appended to /var/log/gews-check.log (ensure the user can write there).
+
+0 */6 * * *  /opt/gews/venv/bin/gews monitor -c /opt/gews/config/global_watch.yaml --check-now >> /var/log/gews-check.log 2>&1

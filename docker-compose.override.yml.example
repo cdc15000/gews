@@ -1,0 +1,49 @@
+# docker-compose.override.yml.example
+#
+# Copy this file to docker-compose.override.yml and edit to customize
+# your deployment.  Values here merge with docker-compose.yml automatically.
+#
+# cp docker-compose.override.yml.example docker-compose.override.yml
+
+version: "3.8"
+
+services:
+  monitor:
+    environment:
+      # --- Earthdata credentials (alternative to .netrc mount) ---
+      # - EARTHDATA_USERNAME=your_username
+      # - EARTHDATA_PASSWORD=your_password
+
+      # --- Email alerts ---
+      - GEWS_SMTP_HOST=smtp.gmail.com
+      - GEWS_SMTP_PORT=587
+      - GEWS_SMTP_USER=alerts@example.com
+      - GEWS_SMTP_PASS=app-password-here
+      - GEWS_SMTP_TO=team@example.com
+
+      # --- Slack alerts ---
+      - GEWS_SLACK_WEBHOOK=https://hooks.slack.com/services/T00/B00/xxxx
+
+      # --- Generic webhook ---
+      - GEWS_WEBHOOK_URL=https://your-service.example.com/api/gews-alert
+
+    # Use a specific watch-list config
+    command:
+      - monitor
+      - -c
+      - config/nepal_2026.yaml
+      - --interval
+      - "4"
+
+  dashboard:
+    # Expose dashboard on a different port
+    ports:
+      - "9090:9090"
+    command:
+      - dashboard
+      - -c
+      - config/nepal_2026.yaml
+      - --port
+      - "9090"
+      - --data-dir
+      - /app/output

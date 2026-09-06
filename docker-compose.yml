@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  monitor:
+    build: .
+    command:
+      - monitor
+      - -c
+      - ${GEWS_CONFIG:-config/global_watch.yaml}
+      - --interval
+      - "${GEWS_INTERVAL:-6}"
+    volumes:
+      - ./config:/app/config:ro
+      - gews-data:/app/data
+      - gews-output:/app/output
+      - ${HOME}/.netrc:/root/.netrc:ro
+    environment:
+      - GEWS_SMTP_HOST=${GEWS_SMTP_HOST:-}
+      - GEWS_SMTP_PORT=${GEWS_SMTP_PORT:-587}
+      - GEWS_SMTP_USER=${GEWS_SMTP_USER:-}
+      - GEWS_SMTP_PASS=${GEWS_SMTP_PASS:-}
+      - GEWS_SMTP_TO=${GEWS_SMTP_TO:-}
+      - GEWS_SLACK_WEBHOOK=${GEWS_SLACK_WEBHOOK:-}
+      - GEWS_WEBHOOK_URL=${GEWS_WEBHOOK_URL:-}
+    restart: on-failure
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  dashboard:
+    build: .
+    command:
+      - dashboard
+      - -c
+      - ${GEWS_CONFIG:-config/global_watch.yaml}
+      - --port
+      - "${GEWS_DASHBOARD_PORT:-8080}"
+      - --data-dir
+      - /app/output
+    ports:
+      - "${GEWS_DASHBOARD_PORT:-8080}:${GEWS_DASHBOARD_PORT:-8080}"
+    volumes:
+      - ./config:/app/config:ro
+      - gews-output:/app/output:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:${GEWS_DASHBOARD_PORT:-8080}/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    depends_on:
+      - monitor
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+volumes:
+  gews-data:
+  gews-output:
