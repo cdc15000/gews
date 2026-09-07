@@ -41,7 +41,19 @@ def _load_config(config_path: str) -> dict:
         sys.exit(1)
 
     with open(path) as f:
-        return yaml.safe_load(f)
+        config = yaml.safe_load(f)
+
+    # Run validation and emit warnings (non-blocking)
+    from gews.validate import validate_config
+
+    issues = validate_config(config) if isinstance(config, dict) else []
+    for issue in issues:
+        if issue.startswith("WARNING:"):
+            logger.warning(issue.removeprefix("WARNING: "))
+        elif issue.startswith("ERROR:"):
+            logger.warning("Config issue: %s", issue.removeprefix("ERROR: "))
+
+    return config
 
 
 @click.group()
@@ -382,6 +394,78 @@ def dashboard(config: str, port: int, data_dir: str) -> None:
 
     cfg = _load_config(config)
     serve(data_dir=data_dir, port=port, config=cfg)
+
+
+@main.command()
+@click.option("--config", "-c", required=True, help="Path to site config YAML")
+def validate(config: str) -> None:
+    """Validate a configuration file and report errors/warnings."""
+    from gews.validate import validate_config_file
+
+    cfg, issues = validate_config_file(config)
+
+    errors = [i for i in issues if i.startswith("ERROR:")]
+    warnings = [i for i in issues if i.startswith("WARNING:")]
+
+    if not issues:
+        click.echo(f"Config OK: {config}")
+        sys.exit(0)
+
+    for issue in issues:
+        if issue.startswith("ERROR:"):
+            click.secho(issue, fg="red", err=True)
+        else:
+            click.secho(issue, fg="yellow", err=True)
+
+    click.echo()
+    click.echo(f"{len(errors)} error(s), {len(warnings)} warning(s)")
+
+    if errors:
+        sys.exit(1)
+
+
+@main.command()
+def info() -> None:
+    """Show version, Python info, dependency status, and available configs."""
+    import importlib
+
+    from gews import __version__
+
+    click.echo(f"GEWS v{__version__}")
+    click.echo(f"Python {sys.version}")
+    click.echo()
+
+    # Dependency status
+    click.echo("Dependencies:")
+    deps = [
+        "click",
+        "yaml",
+        "numpy",
+        "scipy",
+        "h5py",
+        "matplotlib",
+        "asf_search",
+    ]
+    for dep in deps:
+        mod_name = dep if dep != "yaml" else "yaml"
+        try:
+            mod = importlib.import_module(mod_name)
+            ver = getattr(mod, "__version__", "installed")
+            click.echo(f"  {dep:20s} {ver}")
+        except ImportError:
+            click.secho(f"  {dep:20s} NOT INSTALLED", fg="yellow")
+
+    click.echo()
+
+    # Available configs
+    config_dir = Path(__file__).parent.parent.parent / "config"
+    if config_dir.is_dir():
+        configs = sorted(config_dir.glob("*.yaml"))
+        click.echo(f"Available configs ({config_dir}):")
+        for c in configs:
+            click.echo(f"  {c.name}")
+    else:
+        click.echo("No config directory found.")
 
 
 @main.command()
