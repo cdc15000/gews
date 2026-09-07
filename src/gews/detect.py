@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 from scipy import ndimage
@@ -255,6 +256,50 @@ def detect_anomalies(
     # flags.
     if dates is not None and displacement is not None:
         _populate_timeseries(flags, dates, displacement)
+
+    # Classifier scoring: when enabled and a trained model exists,
+    # score each flag's displacement time series with the transfer
+    # learning classifier and record the probability in detection_details.
+    cls_config = det.get("classifier", {})
+    if (
+        cls_config.get("enabled", False)
+        and dates is not None
+        and displacement is not None
+    ):
+        model_path = cls_config.get("model_path", "")
+        if model_path and Path(model_path).is_file():
+            from gews.classifier import PrecursorClassifier, PrecursorFeatureExtractor
+
+            try:
+                clf = PrecursorClassifier.load(model_path)
+                extractor = PrecursorFeatureExtractor()
+                n_epochs_c, n_rows_c, n_cols_c = displacement.shape
+
+                for flag in flags:
+                    rows = flag.pixel_indices[:, 0]
+                    cols = flag.pixel_indices[:, 1]
+                    valid_px = (
+                        (rows >= 0) & (rows < n_rows_c)
+                        & (cols >= 0) & (cols < n_cols_c)
+                    )
+                    rows, cols = rows[valid_px], cols[valid_px]
+                    if len(rows) == 0:
+                        continue
+
+                    mean_disp = np.nanmean(displacement[:, rows, cols], axis=1)
+                    feats = extractor.extract_features(dates.astype(float), mean_disp)
+                    score = float(clf.predict_proba(feats)[0])
+                    flag.detection_details["classifier_score"] = score
+            except Exception:
+                logger.warning(
+                    "Classifier scoring failed; skipping",
+                    exc_info=True,
+                )
+        else:
+            logger.debug(
+                "Classifier enabled but model not found at %r; skipping",
+                model_path,
+            )
 
     # Voight analysis on top candidates
     if det.get("voight", {}).get("enabled", False):
