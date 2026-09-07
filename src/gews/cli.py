@@ -10,6 +10,7 @@ Usage:
     gews report   --config CONFIG     Generate analysis report
     gews monitor  --config CONFIG     Continuous monitoring for new NISAR data
     gews dashboard --config CONFIG    Launch Tier 2 analyst review dashboard
+    gews map       --data-dir DIR     Launch interactive GeoJSON map viewer
     gews demo                         Run full pipeline on synthetic data
 """
 
@@ -382,6 +383,16 @@ def dashboard(config: str, port: int, data_dir: str) -> None:
 
     cfg = _load_config(config)
     serve(data_dir=data_dir, port=port, config=cfg)
+
+
+@main.command(name="map")
+@click.option("--data-dir", default="output", help="Directory containing flags.geojson")
+@click.option("--port", default=8050, type=int, help="Port to serve on")
+def map_view(data_dir: str, port: int) -> None:
+    """Launch an interactive map viewer for flagged sites."""
+    from gews.mapview import serve
+
+    serve(data_dir=data_dir, port=port)
 
 
 @main.command()
