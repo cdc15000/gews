@@ -288,6 +288,21 @@ class TestTrainPipeline:
         proba = model.predict_proba(X)
         assert np.all((proba >= 0) & (proba <= 1))
 
+    def test_train_achieves_high_accuracy(self, tmp_path):
+        """Pipeline with CLI defaults should achieve >80% accuracy and >50% recall."""
+        path = tmp_path / "model.json"
+        metrics = train_precursor_model(
+            path,
+            seed=42,
+            n_positive=200,
+            n_negative=800,
+            n_iter=500,
+            lr=0.1,
+        )
+
+        assert metrics["accuracy"] > 0.80
+        assert metrics["recall"] > 0.50
+
     def test_trained_model_discriminates(self, tmp_path):
         """Model should give higher scores to positive examples on average."""
         path = tmp_path / "model.json"
@@ -333,3 +348,50 @@ class TestSigmoid:
         """sigmoid(0) == 0.5."""
         result = _sigmoid(np.array([0.0]))
         assert result[0] == pytest.approx(0.5)
+
+
+# ------------------------------------------------------------------ #
+#  CLI train command                                                   #
+# ------------------------------------------------------------------ #
+
+class TestTrainCLI:
+    """Tests for the gews train CLI command."""
+
+    def test_train_command_runs(self, tmp_path):
+        """The train command should produce a model file."""
+        from click.testing import CliRunner
+        from gews.cli import main
+
+        output = tmp_path / "model.json"
+        runner = CliRunner()
+        result = runner.invoke(main, [
+            "train",
+            "--output", str(output),
+            "--seed", "42",
+            "--n-positive", "50",
+            "--n-negative", "200",
+            "--n-iter", "100",
+        ])
+
+        assert result.exit_code == 0, result.output
+        assert output.is_file()
+        assert "Training complete" in result.output
+
+    def test_train_command_creates_directory(self, tmp_path):
+        """The train command should create the output directory if needed."""
+        from click.testing import CliRunner
+        from gews.cli import main
+
+        output = tmp_path / "subdir" / "model.json"
+        runner = CliRunner()
+        result = runner.invoke(main, [
+            "train",
+            "--output", str(output),
+            "--seed", "42",
+            "--n-positive", "30",
+            "--n-negative", "100",
+            "--n-iter", "50",
+        ])
+
+        assert result.exit_code == 0, result.output
+        assert output.is_file()

@@ -325,6 +325,7 @@ def apply_tier1_filters(
     coherence_map: np.ndarray,
     dates: np.ndarray,
     config: dict,
+    dem: np.ndarray | None = None,
 ) -> list[AnomalyFlag]:
     """
     Run all Tier 1 cross-check filters on detected anomaly flags.
@@ -386,6 +387,25 @@ def apply_tier1_filters(
         len(flags), min_coherence, min_spatial, min_temporal,
     )
 
+    # APS detection: when a DEM is provided, run atmospheric phase
+    # screen analysis once (scene-wide) and use results per flag.
+    aps_result = None
+    if dem is not None:
+        from gews.atmosphere import APSDetector
+
+        try:
+            detector = APSDetector()
+            aps_thresholds = t1_config.get("aps_thresholds", {})
+            aps_result = detector.flag_aps_contaminated_epochs(
+                dates, displacement_stack, dem=dem,
+                thresholds=aps_thresholds,
+            )
+        except Exception:
+            logger.warning(
+                "APS detection failed; skipping atmospheric check",
+                exc_info=True,
+            )
+
     retained: list[AnomalyFlag] = []
 
     for flag in flags:
@@ -414,8 +434,22 @@ def apply_tier1_filters(
             max_gap_fraction=1 - min_temporal,
         )
 
-        # Overall quality: geometric mean of the three scores
-        composite = (quality * spatial * temporal) ** (1.0 / 3.0)
+        # APS score: if APS analysis ran, check whether this flag's
+        # epoch is contaminated.  A clean epoch scores 1.0; a
+        # contaminated epoch scores 1 - max(stratified, turbulent).
+        aps_score = None
+        if aps_result is not None:
+            epoch_idx = min(flag.window_index, len(aps_result.contaminated_epochs) - 1)
+            strat = float(aps_result.stratified_scores[epoch_idx])
+            turb = float(aps_result.turbulent_scores[epoch_idx])
+            aps_score = max(0.0, 1.0 - max(strat, turb))
+
+        # Overall quality: geometric mean of scores (3-term without
+        # APS, 4-term when APS is available)
+        if aps_score is not None:
+            composite = (quality * spatial * temporal * aps_score) ** (1.0 / 4.0)
+        else:
+            composite = (quality * spatial * temporal) ** (1.0 / 3.0)
 
         # Recommendation
         if composite < remove_quality:
@@ -425,26 +459,35 @@ def apply_tier1_filters(
         else:
             recommendation = "retain"
 
+        result_details: dict = {
+            "composite_score": composite,
+            "thresholds": {
+                "min_coherence": min_coherence,
+                "min_spatial": min_spatial,
+                "min_temporal": min_temporal,
+                "remove_below": remove_quality,
+                "demote_below": demote_quality,
+            },
+        }
+        if aps_score is not None:
+            result_details["aps"] = {
+                "aps_score": aps_score,
+                "epoch_contaminated": bool(aps_result.contaminated_epochs[epoch_idx]),
+                "stratified_r2": strat,
+                "turbulent_fraction": turb,
+            }
+
         result = CrossCheckResult(
             quality_score=quality,
             spatial_consistency=spatial,
             temporal_consistency=temporal,
             optical_confirmation=None,
             recommendation=recommendation,
-            details={
-                "composite_score": composite,
-                "thresholds": {
-                    "min_coherence": min_coherence,
-                    "min_spatial": min_spatial,
-                    "min_temporal": min_temporal,
-                    "remove_below": remove_quality,
-                    "demote_below": demote_quality,
-                },
-            },
+            details=result_details,
         )
 
         # Annotate the flag
-        flag.detection_details["tier1_quality"] = {
+        tier1_quality: dict = {
             "quality_score": result.quality_score,
             "spatial_consistency": result.spatial_consistency,
             "temporal_consistency": result.temporal_consistency,
@@ -452,6 +495,9 @@ def apply_tier1_filters(
             "composite_score": composite,
             "recommendation": result.recommendation,
         }
+        if aps_score is not None:
+            tier1_quality["aps_score"] = aps_score
+        flag.detection_details["tier1_quality"] = tier1_quality
 
         logger.info(
             "  Flag %d: quality=%.2f, spatial=%.2f, temporal=%.2f, "
