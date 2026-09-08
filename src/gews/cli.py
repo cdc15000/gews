@@ -488,5 +488,28 @@ def version() -> None:
     click.echo("Glacier Early Warning System — PoC InSAR Pipeline")
 
 
+@main.command()
+@click.option("--site", default=None, help="Filter by site name")
+@click.option("--since", default=None, help="Start date (YYYY-MM-DD)")
+@click.option("--provenance-dir", default="data/provenance", help="Provenance log directory")
+@click.option("--audit-dir", default="data/audit", help="Alert audit log directory")
+def audit(site: str | None, since: str | None, provenance_dir: str, audit_dir: str) -> None:
+    """Show provenance and alert audit trail."""
+    from gews.provenance import AlertAuditLog, ProvenanceTracker
+
+    tracker = ProvenanceTracker(log_dir=provenance_dir)
+    audit_log = AlertAuditLog(log_dir=audit_dir)
+
+    # Provenance report
+    prov_report = tracker.generate_audit_report(site_name=site)
+    click.echo(prov_report)
+
+    click.echo()
+
+    # Alert history
+    alert_report = audit_log.generate_alert_history(site_name=site)
+    click.echo(alert_report)
+
+
 if __name__ == "__main__":
     main()

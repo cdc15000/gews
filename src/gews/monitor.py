@@ -597,35 +597,64 @@ def run_check_cycle(site_config: dict) -> list[dict]:
 
     Returns the list of new alerts generated (may be empty).
     """
+    from gews.provenance import AlertAuditLog, ProvenanceTracker
+
     site_name = site_config["site"]["name"]
     state_path = _state_path(site_config)
     state = MonitorState.load(state_path, site_name)
 
+    mon = site_config.get("monitor", {})
+    tracker = ProvenanceTracker(log_dir=mon.get("provenance_dir", "data/provenance"))
+    audit_log = AlertAuditLog(log_dir=mon.get("audit_dir", "data/audit"))
+
     try:
-        new_products = check_new_data(site_config, state=state)
-        result = process_new_acquisition(new_products, site_config, state)
+        with tracker.track("check_cycle", site_name) as cycle_ctx:
+            new_products = check_new_data(site_config, state=state)
+            result = process_new_acquisition(new_products, site_config, state)
 
-        alerts = []
-        if result["flags"]:
-            alerts = build_alerts(result["flags"], result["ts"], site_config, state)
-            write_alerts(alerts, site_config)
+            alerts = []
+            if result["flags"]:
+                alerts = build_alerts(result["flags"], result["ts"], site_config, state)
+                write_alerts(alerts, site_config)
 
-            # Dispatch alerts to configured notification channels
-            # (email, Slack, webhook).  If all channels fail for a given
-            # alert, remove its signature so the next cycle retries.
-            from gews.alerts import AlertDispatcher
+                # Dispatch alerts to configured notification channels
+                # (email, Slack, webhook).  If all channels fail for a given
+                # alert, remove its signature so the next cycle retries.
+                from gews.alerts import AlertDispatcher
 
-            dispatcher = AlertDispatcher.from_config(site_config)
-            for alert in alerts:
-                results = dispatcher.dispatch(
-                    alert["level"],
-                    alert["site"],
-                    alert["message"],
-                    {k: v for k, v in alert.items()
-                     if k not in ("level", "site", "message")},
-                )
-                if results and not any(results.values()):
-                    state.alerted_signatures.discard(alert["alert_id"])
+                dispatcher = AlertDispatcher.from_config(site_config)
+                for alert in alerts:
+                    dispatch_results = dispatcher.dispatch(
+                        alert["level"],
+                        alert["site"],
+                        alert["message"],
+                        {k: v for k, v in alert.items()
+                         if k not in ("level", "site", "message")},
+                    )
+
+                    # Log each alert dispatch to the audit log
+                    channels_sent = [
+                        ch for ch, ok in dispatch_results.items() if ok
+                    ]
+                    channels_failed = [
+                        ch for ch, ok in dispatch_results.items() if not ok
+                    ]
+                    audit_log.log_alert(
+                        alert["level"],
+                        alert["site"],
+                        alert["message"],
+                        channels_sent=channels_sent,
+                        channels_failed=channels_failed,
+                    )
+
+                    if dispatch_results and not any(dispatch_results.values()):
+                        state.alerted_signatures.discard(alert["alert_id"])
+
+            cycle_ctx.set_result(
+                f"{len(new_products)} new products, "
+                f"{len(result['flags'])} flags, "
+                f"{len(alerts)} alerts"
+            )
 
         state.last_check = datetime.now(timezone.utc).isoformat()
         state.n_checks += 1
