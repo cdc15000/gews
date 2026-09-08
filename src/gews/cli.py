@@ -479,6 +479,35 @@ def info() -> None:
         click.echo("No config directory found.")
 
 
+@main.command(name="benchmark")
+@click.option("--quick", is_flag=True, help="Run quick benchmark only")
+def benchmark_cmd(quick: bool) -> None:
+    """Run pipeline performance benchmarks."""
+    from gews.benchmark import PipelineBenchmark
+
+    bench = PipelineBenchmark()
+
+    if quick:
+        pixel_list = [1000, 5000]
+    else:
+        pixel_list = [1000, 5000, 10000, 50000]
+
+    click.echo("Running timeseries benchmark...")
+    bench.benchmark_timeseries(n_pixels_list=pixel_list)
+
+    click.echo("Running step-change benchmark...")
+    bench.benchmark_step_change(n_pixels_list=pixel_list)
+
+    click.echo("Running BOCPD benchmark...")
+    bench.benchmark_bocpd(n_pixels_list=pixel_list)
+
+    click.echo("Running detection benchmark...")
+    bench.benchmark_detection(n_pixels_list=pixel_list)
+
+    report = bench.generate_report()
+    click.echo(report)
+
+
 @main.command()
 def version() -> None:
     """Show version information."""
