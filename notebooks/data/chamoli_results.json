@@ -1,0 +1,498 @@
+{
+  "event_date": "2021-02-07",
+  "location": {
+    "name": "Chamoli, Uttarakhand, India",
+    "latitude": 30.38,
+    "longitude": 79.73,
+    "elevation_m": 5500.0,
+    "peak": "Ronti Peak"
+  },
+  "validation_type": "synthetic_retrospective",
+  "generated": "2026-09-08T02:27:24.917579",
+  "asf_search": {
+    "nisar_goff_count": 0,
+    "nisar_gunw_count": 0,
+    "sentinel1_count": 20,
+    "asf_query_status": "success",
+    "notes": [
+      "NISAR launched 2024-03-22. No NISAR data exist for the 2021 event period. GOFF/GUNW search skipped.",
+      "Found 20 Sentinel-1 SLC scenes (Jan 2021) on tracks [56, 63, 129, 165]."
+    ],
+    "sentinel1_tracks": [
+      56,
+      63,
+      129,
+      165
+    ]
+  },
+  "synthetic_parameters": {
+    "note": "These are ASSUMED parameters for a hypothetical precursor scenario. No published study quantifies pre-event InSAR displacement rates at Ronti Peak. Shugar et al. (2021) identified crack widening in optical imagery but did not report InSAR-derived creep rates.",
+    "base_velocity_m_yr": 0.05,
+    "acceleration_onset_days_before": 120,
+    "max_acceleration_m_yr2": 0.2,
+    "ramp_type": "exponential",
+    "failure_zone_radius_pixels": 7,
+    "pixel_size_approx_m": 90,
+    "wedge_dimensions": {
+      "length_m": 500,
+      "width_m": 250,
+      "depth_m": 80
+    }
+  },
+  "detection_results": {
+    "sigma_2_0": {
+      "sigma_threshold": 2.0,
+      "total_flags": 207,
+      "flags_near_site_total": 7,
+      "signal_flags": 0,
+      "noise_flags_near_site": 7,
+      "detected": false,
+      "signal_lead_times": [],
+      "noise_flags_detail": [
+        {
+          "flag_id": 91,
+          "score": 3.869,
+          "peak_zscore": 3.3,
+          "area_m2": 30895262.0,
+          "distance_to_injection_m": 1664.0,
+          "window_date": "2019-10-24",
+          "operationally_available_date": "2019-11-23",
+          "lead_time_days": 442.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        },
+        {
+          "flag_id": 14,
+          "score": 3.109,
+          "peak_zscore": 2.51,
+          "area_m2": 1190935.0,
+          "distance_to_injection_m": 1297.0,
+          "window_date": "2019-05-09",
+          "operationally_available_date": "2019-06-08",
+          "lead_time_days": 610.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        },
+        {
+          "flag_id": 101,
+          "score": 2.797,
+          "peak_zscore": 2.32,
+          "area_m2": 86300.0,
+          "distance_to_injection_m": 1951.0,
+          "window_date": "2019-11-17",
+          "operationally_available_date": "2019-12-17",
+          "lead_time_days": 418.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        },
+        {
+          "flag_id": 102,
+          "score": 2.734,
+          "peak_zscore": 2.19,
+          "area_m2": 112189.0,
+          "distance_to_injection_m": 735.0,
+          "window_date": "2019-11-17",
+          "operationally_available_date": "2019-12-17",
+          "lead_time_days": 418.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        },
+        {
+          "flag_id": 29,
+          "score": 2.619,
+          "peak_zscore": 2.13,
+          "area_m2": 43150.0,
+          "distance_to_injection_m": 1799.0,
+          "window_date": "2019-06-02",
+          "operationally_available_date": "2019-07-02",
+          "lead_time_days": 586.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        }
+      ],
+      "max_lead_time_days": null,
+      "earliest_crossing_in_accel_phase": null,
+      "earliest_lead_time_days": null,
+      "earliest_noise_crossing": {
+        "window_index": 4,
+        "window_date": "2019-05-09",
+        "operationally_available_date": "2019-06-08",
+        "lead_time_days": 610.0,
+        "n_pixels_exceeding": 13,
+        "peak_zscore": 2.27
+      },
+      "site_zscore_diagnostic": {
+        "pixel_row_col": [
+          60,
+          125
+        ],
+        "max_zscore_overall": 2.803,
+        "max_zscore_in_accel_phase": 1.747,
+        "max_zscore_pre_accel_phase": 2.803,
+        "n_windows_total": 55,
+        "n_windows_in_accel_phase": 7,
+        "zscore_timeseries": [
+          {
+            "date": "2020-07-14",
+            "peak_zscore": 0.55,
+            "acceleration_m_yr2": -0.502039,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-07-26",
+            "peak_zscore": 2.091,
+            "acceleration_m_yr2": 2.177436,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-08-07",
+            "peak_zscore": 0.648,
+            "acceleration_m_yr2": 0.70671,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-08-19",
+            "peak_zscore": 1.532,
+            "acceleration_m_yr2": -1.441087,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-08-31",
+            "peak_zscore": 0.642,
+            "acceleration_m_yr2": -0.61553,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-09-12",
+            "peak_zscore": 1.165,
+            "acceleration_m_yr2": 1.14969,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-09-24",
+            "peak_zscore": 0.521,
+            "acceleration_m_yr2": -0.511751,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-10-06",
+            "peak_zscore": 0.844,
+            "acceleration_m_yr2": 0.843306,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-10-18",
+            "peak_zscore": 1.379,
+            "acceleration_m_yr2": -1.400377,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-10-30",
+            "peak_zscore": 1.347,
+            "acceleration_m_yr2": -1.264734,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-11-11",
+            "peak_zscore": 0.723,
+            "acceleration_m_yr2": -0.701859,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-11-23",
+            "peak_zscore": 0.893,
+            "acceleration_m_yr2": 0.890462,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-12-05",
+            "peak_zscore": 0.983,
+            "acceleration_m_yr2": 0.991322,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-12-17",
+            "peak_zscore": 1.23,
+            "acceleration_m_yr2": 1.211907,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-12-29",
+            "peak_zscore": 1.747,
+            "acceleration_m_yr2": -1.630417,
+            "in_accel_phase": true
+          }
+        ],
+        "interpretation": "Peak z-score at injection site: 1.75 during acceleration phase vs 2.80 before onset. The signal is NOT clearly distinguishable from background noise at the assumed acceleration rate."
+      },
+      "false_positive_note": "7 flag(s) near the site are noise (pre-onset or oversized clusters). At sigma=2.0, the detector produces 207 total flags across the scene, most of which are false positives."
+    },
+    "sigma_2_5": {
+      "sigma_threshold": 2.5,
+      "total_flags": 134,
+      "flags_near_site_total": 1,
+      "signal_flags": 0,
+      "noise_flags_near_site": 1,
+      "detected": false,
+      "signal_lead_times": [],
+      "noise_flags_detail": [
+        {
+          "flag_id": 57,
+          "score": 3.85,
+          "peak_zscore": 3.3,
+          "area_m2": 9587887.0,
+          "distance_to_injection_m": 1267.0,
+          "window_date": "2019-10-24",
+          "operationally_available_date": "2019-11-23",
+          "lead_time_days": 442.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        }
+      ],
+      "max_lead_time_days": null,
+      "earliest_crossing_in_accel_phase": null,
+      "earliest_lead_time_days": null,
+      "earliest_noise_crossing": {
+        "window_index": 18,
+        "window_date": "2019-10-24",
+        "operationally_available_date": "2019-11-23",
+        "lead_time_days": 442.0,
+        "n_pixels_exceeding": 91,
+        "peak_zscore": 3.03
+      },
+      "site_zscore_diagnostic": {
+        "pixel_row_col": [
+          60,
+          125
+        ],
+        "max_zscore_overall": 2.803,
+        "max_zscore_in_accel_phase": 1.747,
+        "max_zscore_pre_accel_phase": 2.803,
+        "n_windows_total": 55,
+        "n_windows_in_accel_phase": 7,
+        "zscore_timeseries": [
+          {
+            "date": "2020-07-14",
+            "peak_zscore": 0.55,
+            "acceleration_m_yr2": -0.502039,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-07-26",
+            "peak_zscore": 2.091,
+            "acceleration_m_yr2": 2.177436,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-08-07",
+            "peak_zscore": 0.648,
+            "acceleration_m_yr2": 0.70671,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-08-19",
+            "peak_zscore": 1.532,
+            "acceleration_m_yr2": -1.441087,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-08-31",
+            "peak_zscore": 0.642,
+            "acceleration_m_yr2": -0.61553,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-09-12",
+            "peak_zscore": 1.165,
+            "acceleration_m_yr2": 1.14969,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-09-24",
+            "peak_zscore": 0.521,
+            "acceleration_m_yr2": -0.511751,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-10-06",
+            "peak_zscore": 0.844,
+            "acceleration_m_yr2": 0.843306,
+            "in_accel_phase": false
+          },
+          {
+            "date": "2020-10-18",
+            "peak_zscore": 1.379,
+            "acceleration_m_yr2": -1.400377,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-10-30",
+            "peak_zscore": 1.347,
+            "acceleration_m_yr2": -1.264734,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-11-11",
+            "peak_zscore": 0.723,
+            "acceleration_m_yr2": -0.701859,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-11-23",
+            "peak_zscore": 0.893,
+            "acceleration_m_yr2": 0.890462,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-12-05",
+            "peak_zscore": 0.983,
+            "acceleration_m_yr2": 0.991322,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-12-17",
+            "peak_zscore": 1.23,
+            "acceleration_m_yr2": 1.211907,
+            "in_accel_phase": true
+          },
+          {
+            "date": "2020-12-29",
+            "peak_zscore": 1.747,
+            "acceleration_m_yr2": -1.630417,
+            "in_accel_phase": true
+          }
+        ],
+        "interpretation": "Peak z-score at injection site: 1.75 during acceleration phase vs 2.80 before onset. The signal is NOT clearly distinguishable from background noise at the assumed acceleration rate."
+      },
+      "false_positive_note": "1 flag(s) near the site are noise (pre-onset or oversized clusters). At sigma=2.5, the detector produces 134 total flags across the scene, most of which are false positives."
+    },
+    "would_gews_have_flagged": false,
+    "earliest_warning_days": null,
+    "how_many_days_before": null,
+    "assessment_summary": "At sigma=2.0, GEWS did not detect the synthetic precursor signal in the acceleration phase (0 signal flag(s), 7 noise flag(s) near site). At sigma=2.5, GEWS did not detect it (0 signal flag(s))."
+  },
+  "cascade_assessment": {
+    "pipeline_assessments": [],
+    "literature_comparison": {
+      "note": "Runout and exposure computed using literature-reported values (volume=27 Mm3, elevation drop=4100 m) rather than pipeline-estimated values. The pipeline's volume heuristic (depth = 0.1 * sqrt(area)) underestimates deep-seated rock-ice wedge failures like Chamoli.",
+      "volume_m3_literature": 27000000,
+      "elevation_drop_m": 4100.0,
+      "runout_distance_km": 43.8,
+      "angle_of_reach_deg": 5.34,
+      "observed_runout_km": 27.0,
+      "population_exposed": 21960,
+      "population_by_distance": {
+        "0-10km": 187,
+        "10-30km": 21773,
+        "30-100km": 0
+      },
+      "settlements_at_risk": [
+        {
+          "name": "Lower Hamlet",
+          "population": 128,
+          "distance_km": 3.0,
+          "coordinates": {
+            "lat": 30.3534,
+            "lon": 79.7344
+          }
+        },
+        {
+          "name": "Ridge Settlement",
+          "population": 59,
+          "distance_km": 7.8,
+          "coordinates": {
+            "lat": 30.3124,
+            "lon": 79.709
+          }
+        },
+        {
+          "name": "Valley Village",
+          "population": 515,
+          "distance_km": 12.1,
+          "coordinates": {
+            "lat": 30.2721,
+            "lon": 79.7113
+          }
+        },
+        {
+          "name": "Mountain Village",
+          "population": 1479,
+          "distance_km": 19.1,
+          "coordinates": {
+            "lat": 30.2146,
+            "lon": 79.7816
+          }
+        },
+        {
+          "name": "River Town",
+          "population": 19779,
+          "distance_km": 27.1,
+          "coordinates": {
+            "lat": 30.1483,
+            "lon": 79.6443
+          }
+        }
+      ],
+      "exposure_score": 5.3
+    },
+    "pipeline_assessments_note": "No signal flags detected in the acceleration phase. Pipeline-native cascade assessment skipped because running it on noise clusters would produce meaningless volume estimates. See literature_comparison for the cascade scenario using published event parameters."
+  },
+  "event_facts": {
+    "failure_volume_m3": 27000000,
+    "wedge_dimensions_m": "500 x 250 x 80",
+    "slope_angle_deg": 35.0,
+    "runout_distance_km": 27.0,
+    "casualties": 204,
+    "infrastructure_destroyed": [
+      "Rishiganga Hydroelectric Project (13.2 MW)",
+      "Tapovan Vishnugad Hydroelectric Project (520 MW, under construction)"
+    ]
+  },
+  "limitations": [
+    "NISAR launched in 2024 \u2014 no NISAR GOFF/GUNW data exist for this 2021 event.",
+    "No published InSAR-derived pre-event displacement rates at Ronti Peak. The injected precursor signal uses physically plausible assumptions, not measured values.",
+    "Synthetic data lacks real atmospheric artifacts, DEM errors, and seasonal snow decorrelation typical of high Himalayan InSAR.",
+    "Detection lead times depend entirely on the assumed acceleration onset and magnitude \u2014 different assumptions yield different results.",
+    "The pipeline volume heuristic (depth = 0.1 * sqrt(area)) significantly underestimates deep-seated rock-ice failures. The Chamoli wedge was ~80 m deep vs the heuristic's expectation of ~35 m for a 125,000 m2 area.",
+    "Cascade exposure uses synthetic settlements, not actual census data."
+  ],
+  "literature_references": [
+    {
+      "authors": "Shugar et al.",
+      "year": 2021,
+      "title": "A massive rock and ice avalanche caused the 2021 disaster at Chamoli, Indian Himalaya",
+      "journal": "Science",
+      "volume": "373(6552)",
+      "pages": "300-306",
+      "doi": "10.1126/science.abh4455",
+      "used_for": "Event description, failure dimensions, debris flow runout distance"
+    },
+    {
+      "authors": "Voight",
+      "year": 1988,
+      "title": "A method for prediction of volcanic eruptions",
+      "journal": "Nature",
+      "volume": "332(6160)",
+      "pages": "125-130",
+      "used_for": "Failure forecasting law applied to acceleration detection"
+    },
+    {
+      "authors": "Scheidegger",
+      "year": 1973,
+      "title": "On the prediction of the reach and velocity of catastrophic landslides",
+      "journal": "Rock Mechanics",
+      "volume": "5(4)",
+      "pages": "231-236",
+      "used_for": "Volume-dependent runout estimation (angle of reach)"
+    },
+    {
+      "authors": "Hungr, Leroueil & Picarelli",
+      "year": 2014,
+      "title": "The Varnes classification of landslide types, an update",
+      "journal": "Landslides",
+      "volume": "11(2)",
+      "pages": "167-194",
+      "used_for": "Failure depth heuristic for volume estimation"
+    }
+  ]
+}
