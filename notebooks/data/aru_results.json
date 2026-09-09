@@ -1,0 +1,248 @@
+{
+  "site": {
+    "name": "Aru Glaciers, Western Tibet",
+    "latitude": 34.0,
+    "longitude": 82.2,
+    "description": "Twin glacier collapses in the Aru Range. Low-angle (~10-15 deg bed slope) glacier failures unprecedented in the observational record. Subglacial meltwater pressurization on fine-grained till, amplified by permafrost degradation."
+  },
+  "event_dates": {
+    "aru_1": "2016-07-17",
+    "aru_2": "2016-09-21"
+  },
+  "location": {
+    "latitude": 34.0,
+    "longitude": 82.2,
+    "region": "Aru Range, Rutog County, Ngari Prefecture, Tibet"
+  },
+  "validation_type": "synthetic_retrospective",
+  "generated": "2026-09-08T02:22:28.760641",
+  "limitations": [
+    "No real NISAR data for 2016 -- all displacement values are synthetic.",
+    "Synthetic time series use idealized noise; real InSAR data would have spatially correlated atmospheric artifacts and coherence loss.",
+    "12-day repeat cadence mirrors NISAR design but differs from Landsat and other sensors used in original studies.",
+    "Results demonstrate detection capability on documented signal magnitude, not an independent discovery.",
+    "Glacier geometry and spatial extent are approximated; real glaciers have complex shapes and variable surface properties.",
+    "Permafrost and subglacial conditions cannot be observed by InSAR alone -- complementary data would be needed operationally."
+  ],
+  "literature_references": [
+    {
+      "key": "Kaab2018",
+      "citation": "Kaab, A., Leinss, S., Gilbert, A., et al. (2018). Massive collapse of two glaciers in western Tibet in 2016 after surge-like instability. Nature Geoscience, 11, 114-120.",
+      "doi": "10.1038/s41561-017-0039-7",
+      "used_for": "Pre-collapse velocity values (1 -> 20 m/yr over ~2 months)"
+    },
+    {
+      "key": "Tian2017",
+      "citation": "Tian, L., Yao, T., Gao, Y., et al. (2017). Two glaciers collapsed in western Tibet. Journal of Glaciology, 63(237), 194-197.",
+      "doi": "10.1017/jog.2016.122",
+      "used_for": "Surging behavior detection in satellite imagery"
+    },
+    {
+      "key": "Gilbert2018",
+      "citation": "Gilbert, A., Leinss, S., Kargel, J., et al. (2018). Mechanisms leading to the 2016 giant twin glacier collapses, Aru Range, Tibet. The Cryosphere, 12, 2883-2900.",
+      "doi": "10.5194/tc-12-2883-2018",
+      "used_for": "Thermomechanical collapse mechanism"
+    }
+  ],
+  "event_context": {
+    "bed_angle_deg": "10-15 (unusually flat for collapse)",
+    "volumes": {
+      "aru_1_m3": 68000000,
+      "aru_2_m3": 83000000,
+      "total_m3": 151000000
+    },
+    "debris_runout_km": 8.5,
+    "fatalities": 9,
+    "livestock_killed": "hundreds",
+    "mechanism": "Subglacial meltwater pressurization on fine-grained, low-permeability till bed. Permafrost degradation beneath glacier increased basal water input. The low bed angle meant large areas were near the threshold for sliding; once destabilized, the entire glacier tongue mobilized.",
+    "climate_link": "Permafrost degradation due to regional warming. Increased meltwater penetration to glacier bed. These collapses may represent a new failure mode enabled by climate change."
+  },
+  "synthetic_parameters": {
+    "background_velocity_m_yr": 1.0,
+    "peak_velocity_m_yr": 20.0,
+    "acceleration_onset_days_before_collapse": 60,
+    "acquisition_cadence_days": 12,
+    "grid_size": "40x40",
+    "pixel_size_deg": 0.001,
+    "noise_model": "spatially correlated atmospheric (3 mm RMS) + measurement (1 mm RMS)"
+  },
+  "collapses": {
+    "aru_1": {
+      "collapse_date": "2016-07-17",
+      "volume_mm3": 68.0,
+      "volume_m3": 68000000.0,
+      "n_epochs": 28,
+      "date_range": [
+        "2016-01-01",
+        "2016-11-20"
+      ],
+      "detection_results": {
+        "acceleration_zscore": {
+          "n_flags": 1,
+          "max_zscore": 5.23,
+          "flags": [
+            {
+              "flag_id": 0,
+              "score": 3.902,
+              "peak_zscore": 4.19,
+              "area_m2": 97264,
+              "detection_tag": "acceleration",
+              "window_date": "2016-08-25"
+            }
+          ]
+        },
+        "bocpd": {
+          "changepoint_dates": [
+            "2016-05-24",
+            "2016-06-05"
+          ],
+          "changepoint_indices": [
+            12,
+            13
+          ],
+          "max_probability": 1.0000000000000002
+        },
+        "voight": {
+          "predicted_failure_date": "2016-09-16",
+          "actual_collapse_date": "2016-07-17",
+          "prediction_error_days": 61,
+          "r_squared": 0.6078,
+          "inverse_velocity_slope": -0.004971
+        }
+      },
+      "advance_warning": {
+        "bocpd": {
+          "first_detection_date": "2016-05-24",
+          "advance_warning_days": 54
+        }
+      },
+      "cascade_assessment": [
+        {
+          "flag_id": 0,
+          "risk_level": "high",
+          "estimated_volume_m3": 3033408,
+          "volume_sufficient": "True",
+          "slope_angle_deg": 35.0,
+          "elevation_m": 3890,
+          "runout_distance_km": 7.5,
+          "runout_reaches_river": "True",
+          "angle_of_reach_deg": 7.6,
+          "population_exposed": 326,
+          "dam_potential": true,
+          "cascade_score": 2.022
+        }
+      ]
+    },
+    "aru_2": {
+      "collapse_date": "2016-09-21",
+      "volume_mm3": 83.0,
+      "volume_m3": 83000000.0,
+      "n_epochs": 28,
+      "date_range": [
+        "2016-01-01",
+        "2016-11-20"
+      ],
+      "detection_results": {
+        "acceleration_zscore": {
+          "n_flags": 2,
+          "max_zscore": 5.23,
+          "flags": [
+            {
+              "flag_id": 0,
+              "score": 4.486,
+              "peak_zscore": 4.13,
+              "area_m2": 4593041,
+              "detection_tag": "acceleration",
+              "window_date": "2016-08-13"
+            },
+            {
+              "flag_id": 1,
+              "score": 3.902,
+              "peak_zscore": 4.19,
+              "area_m2": 97264,
+              "detection_tag": "acceleration",
+              "window_date": "2016-08-25"
+            }
+          ]
+        },
+        "bocpd": {
+          "changepoint_dates": [
+            "2016-08-04",
+            "2016-08-16"
+          ],
+          "changepoint_indices": [
+            18,
+            19
+          ],
+          "max_probability": 1.0
+        },
+        "voight": null
+      },
+      "advance_warning": {
+        "acceleration_zscore": {
+          "first_detection_date": "2016-08-13",
+          "advance_warning_days": 39
+        },
+        "bocpd": {
+          "first_detection_date": "2016-08-04",
+          "advance_warning_days": 48
+        }
+      },
+      "cascade_assessment": [
+        {
+          "flag_id": 0,
+          "risk_level": "high",
+          "estimated_volume_m3": 984352075,
+          "volume_sufficient": "True",
+          "slope_angle_deg": 35.0,
+          "elevation_m": 3949,
+          "runout_distance_km": 19.5,
+          "runout_reaches_river": "True",
+          "angle_of_reach_deg": 3.0,
+          "population_exposed": 8739,
+          "dam_potential": true,
+          "cascade_score": 2.344
+        },
+        {
+          "flag_id": 1,
+          "risk_level": "high",
+          "estimated_volume_m3": 3033408,
+          "volume_sufficient": "True",
+          "slope_angle_deg": 35.0,
+          "elevation_m": 3890,
+          "runout_distance_km": 7.5,
+          "runout_reaches_river": "True",
+          "angle_of_reach_deg": 7.6,
+          "population_exposed": 326,
+          "dam_potential": true,
+          "cascade_score": 2.022
+        }
+      ]
+    }
+  },
+  "estimated_advance_warning_days": [
+    {
+      "collapse": "aru_1",
+      "method": "bocpd",
+      "advance_warning_days": 54,
+      "detection_date": "2016-05-24"
+    },
+    {
+      "collapse": "aru_2",
+      "method": "acceleration_zscore",
+      "advance_warning_days": 39,
+      "detection_date": "2016-08-13"
+    },
+    {
+      "collapse": "aru_2",
+      "method": "bocpd",
+      "advance_warning_days": 48,
+      "detection_date": "2016-08-04"
+    }
+  ],
+  "validation_verdict": {
+    "result": "PASS",
+    "detail": "GEWS detection pipeline successfully identified precursory acceleration in synthetic data matching the Aru collapse observations for both events.",
+    "note": "This is a synthetic validation -- the system detected a signal it was designed to detect. Real-world performance depends on actual InSAR data quality, atmospheric conditions, and temporal sampling."
+  }
+}
