@@ -12,6 +12,7 @@ Usage:
     gews dashboard --config CONFIG    Launch Tier 2 analyst review dashboard
     gews map       --data-dir DIR     Launch interactive GeoJSON map viewer
     gews demo                         Run full pipeline on synthetic data
+    gews train                        Train precursor classifier model
 """
 
 from __future__ import annotations
@@ -480,12 +481,103 @@ def info() -> None:
 
 
 @main.command()
+@click.option(
+    "--output", "-o",
+    default="models/precursor_classifier.json",
+    help="Path to save the trained model JSON",
+)
+@click.option("--seed", type=int, default=42, help="Random seed for reproducibility")
+@click.option("--n-positive", type=int, default=200, help="Number of positive training samples")
+@click.option("--n-negative", type=int, default=800, help="Number of negative training samples")
+@click.option("--n-iter", type=int, default=500, help="Training iterations")
+@click.option("--lr", type=float, default=0.1, help="Learning rate")
+def train(output: str, seed: int, n_positive: int, n_negative: int, n_iter: int, lr: float) -> None:
+    """Train the precursor classifier on synthetic landslide data."""
+    from gews.classifier import train_precursor_model
+
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    click.echo(f"Training precursor classifier (seed={seed}, "
+               f"n_positive={n_positive}, n_negative={n_negative}, "
+               f"n_iter={n_iter}, lr={lr})...")
+
+    metrics = train_precursor_model(
+        output_path,
+        seed=seed,
+        n_positive=n_positive,
+        n_negative=n_negative,
+        n_iter=n_iter,
+        lr=lr,
+    )
+
+    click.echo(f"\nTraining complete. Model saved to: {output_path}")
+    click.echo(f"  Accuracy:  {metrics['accuracy']:.3f}")
+    click.echo(f"  Precision: {metrics['precision']:.3f}")
+    click.echo(f"  Recall:    {metrics['recall']:.3f}")
+    click.echo(f"  Loss:      {metrics['final_loss']:.4f}")
+    click.echo(f"  Train/Test: {metrics['n_train']}/{metrics['n_test']}")
+
+
+@main.command(name="benchmark")
+@click.option("--quick", is_flag=True, help="Run quick benchmark only")
+def benchmark_cmd(quick: bool) -> None:
+    """Run pipeline performance benchmarks."""
+    from gews.benchmark import PipelineBenchmark
+
+    bench = PipelineBenchmark()
+
+    if quick:
+        pixel_list = [1000, 5000]
+    else:
+        pixel_list = [1000, 5000, 10000, 50000]
+
+    click.echo("Running timeseries benchmark...")
+    bench.benchmark_timeseries(n_pixels_list=pixel_list)
+
+    click.echo("Running step-change benchmark...")
+    bench.benchmark_step_change(n_pixels_list=pixel_list)
+
+    click.echo("Running BOCPD benchmark...")
+    bench.benchmark_bocpd(n_pixels_list=pixel_list)
+
+    click.echo("Running detection benchmark...")
+    bench.benchmark_detection(n_pixels_list=pixel_list)
+
+    report = bench.generate_report()
+    click.echo(report)
+
+
+@main.command()
 def version() -> None:
     """Show version information."""
     from gews import __version__
 
     click.echo(f"GEWS v{__version__}")
     click.echo("Glacier Early Warning System — PoC InSAR Pipeline")
+
+
+@main.command()
+@click.option("--site", default=None, help="Filter by site name")
+@click.option("--since", default=None, help="Start date (YYYY-MM-DD)")
+@click.option("--provenance-dir", default="data/provenance", help="Provenance log directory")
+@click.option("--audit-dir", default="data/audit", help="Alert audit log directory")
+def audit(site: str | None, since: str | None, provenance_dir: str, audit_dir: str) -> None:
+    """Show provenance and alert audit trail."""
+    from gews.provenance import AlertAuditLog, ProvenanceTracker
+
+    tracker = ProvenanceTracker(log_dir=provenance_dir)
+    audit_log = AlertAuditLog(log_dir=audit_dir)
+
+    # Provenance report
+    prov_report = tracker.generate_audit_report(site_name=site)
+    click.echo(prov_report)
+
+    click.echo()
+
+    # Alert history
+    alert_report = audit_log.generate_alert_history(site_name=site)
+    click.echo(alert_report)
 
 
 if __name__ == "__main__":

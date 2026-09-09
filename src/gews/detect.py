@@ -257,6 +257,48 @@ def detect_anomalies(
     if dates is not None and displacement is not None:
         _populate_timeseries(flags, dates, displacement)
 
+    # Spatial coherence: when enabled, run graph-based spatial anomaly
+    # detection and annotate each flag with a coherence score based on
+    # overlap with spatially coherent clusters.  High coherence boosts
+    # the flag score; low coherence penalises it.
+    spatial_cfg = det.get("spatial", {})
+    if (
+        spatial_cfg.get("enabled", False)
+        and dates is not None
+        and displacement is not None
+    ):
+        from gews.spatial import detect_spatial_anomalies
+
+        try:
+            spatial_anomalies = detect_spatial_anomalies(
+                displacement, dates, latitude, longitude,
+                config={"spatial": spatial_cfg},
+            )
+
+            for flag in flags:
+                best_coherence = 0.0
+                flag_pixels = set(map(tuple, flag.pixel_indices.tolist()))
+                for sa in spatial_anomalies:
+                    sa_pixels = set(map(tuple, sa.pixel_indices.tolist()))
+                    overlap = len(flag_pixels & sa_pixels)
+                    if overlap > 0 and sa.coherence_score > best_coherence:
+                        best_coherence = sa.coherence_score
+
+                flag.detection_details["spatial_coherence"] = best_coherence
+
+                # Boost or penalise score based on coherence
+                if best_coherence >= 0.7:
+                    flag.score *= 1.3   # strong spatial support
+                elif best_coherence >= 0.4:
+                    flag.score *= 1.0   # neutral
+                else:
+                    flag.score *= 0.7   # weak spatial support
+        except Exception:
+            logger.warning(
+                "Spatial coherence check failed; skipping",
+                exc_info=True,
+            )
+
     # Classifier scoring: when enabled and a trained model exists,
     # score each flag's displacement time series with the transfer
     # learning classifier and record the probability in detection_details.

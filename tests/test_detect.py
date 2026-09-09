@@ -164,6 +164,67 @@ class TestDetectAnomalies:
         assert len(flags_high) <= len(flags_low)
 
 
+class TestSpatialCoherence:
+    """Tests for spatial coherence integration in detect_anomalies."""
+
+    def _make_displacement(self, accel_map, n_rows=50, n_cols=60):
+        """Create synthetic displacement with coherent signal at anomaly location."""
+        rng = np.random.default_rng(99)
+        n_epochs = len(accel_map.window_centers)
+        dates = accel_map.window_centers.copy()
+        displacement = rng.normal(0, 0.001, (n_epochs, n_rows, n_cols))
+        # Add strongly correlated ramp at the anomaly location (rows 20-28,
+        # cols 25-33 matches _make_accel_map inject location) so spatial
+        # coherence analysis finds a cluster.
+        for i in range(n_epochs):
+            displacement[i, 20:28, 25:33] += 0.01 * i
+        return dates, displacement
+
+    def test_spatial_coherence_added_when_enabled(self):
+        """When spatial is enabled, every flag should have spatial_coherence."""
+        accel_map = _make_accel_map(inject_anomaly=True)
+        lat, lon = _make_coords()
+        dates, displacement = self._make_displacement(accel_map)
+
+        config = _make_config(sigma=2.5, min_pixels=3)
+        config["detect"]["spatial"] = {
+            "enabled": True,
+            "max_distance_m": 500,
+            "min_correlation": 0.5,
+            "min_cluster_size": 3,
+            "min_coherence": 0.3,
+        }
+
+        flags = detect_anomalies(
+            accel_map, lat, lon, config,
+            dates=dates, displacement=displacement,
+        )
+
+        assert len(flags) > 0
+        for flag in flags:
+            assert "spatial_coherence" in flag.detection_details
+            assert 0.0 <= flag.detection_details["spatial_coherence"] <= 1.0
+
+        # At least one flag should have non-zero coherence to confirm the
+        # spatial code path actually matched clusters to anomaly flags.
+        max_coherence = max(
+            f.detection_details["spatial_coherence"] for f in flags
+        )
+        assert max_coherence > 0, "No flag matched a spatial cluster"
+
+    def test_spatial_coherence_absent_when_disabled(self):
+        """When spatial is not enabled, no spatial_coherence key should appear."""
+        accel_map = _make_accel_map(inject_anomaly=True)
+        lat, lon = _make_coords()
+        config = _make_config(sigma=2.5, min_pixels=3)
+
+        flags = detect_anomalies(accel_map, lat, lon, config)
+
+        assert len(flags) > 0
+        for flag in flags:
+            assert "spatial_coherence" not in flag.detection_details
+
+
 class TestTimeseriesPopulation:
     """Tests for displacement time-series population on flags."""
 

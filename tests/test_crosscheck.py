@@ -410,6 +410,49 @@ class TestApplyTier1Filters:
         result = apply_tier1_filters([], stack, coherence, dates, config)
         assert result == []
 
+    def test_aps_results_added_when_dem_provided(self):
+        """When a DEM is provided, APS results should appear in tier1_quality."""
+        flag = _make_flag(score=5.0)
+        coherence = _make_coherence(value=0.9)
+        dates = np.arange(10, dtype=float)
+        stack = _make_displacement_stack(
+            signal_rows=slice(10, 14),
+            signal_cols=slice(10, 14),
+            signal_strength=0.05,
+            persistent=True,
+        )
+        config = self._make_config()
+
+        # Create a DEM with some elevation variation
+        rng = np.random.default_rng(7)
+        dem = rng.uniform(1000, 3000, (30, 30))
+
+        result = apply_tier1_filters([flag], stack, coherence, dates, config, dem=dem)
+
+        assert len(result) >= 1
+        t1q = result[0].detection_details["tier1_quality"]
+        assert "aps_score" in t1q
+        assert 0.0 <= t1q["aps_score"] <= 1.0
+
+    def test_no_aps_without_dem(self):
+        """Without a DEM, aps_score should not appear in tier1_quality."""
+        flag = _make_flag(score=5.0)
+        coherence = _make_coherence(value=0.9)
+        dates = np.arange(10, dtype=float)
+        stack = _make_displacement_stack(
+            signal_rows=slice(10, 14),
+            signal_cols=slice(10, 14),
+            signal_strength=0.05,
+            persistent=True,
+        )
+        config = self._make_config()
+
+        result = apply_tier1_filters([flag], stack, coherence, dates, config)
+
+        assert len(result) >= 1
+        t1q = result[0].detection_details["tier1_quality"]
+        assert "aps_score" not in t1q
+
     def test_config_defaults_when_missing(self):
         """Should work with an empty config (using defaults)."""
         flag = _make_flag(score=5.0)
