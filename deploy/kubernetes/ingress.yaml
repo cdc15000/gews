@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gews-dashboard
+  namespace: gews
+  labels:
+    app.kubernetes.io/name: gews
+    app.kubernetes.io/component: dashboard
+  annotations:
+    # --- TLS placeholder: uncomment and configure for your cert manager ---
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+spec:
+  ingressClassName: nginx
+  # --- TLS placeholder ---
+  # tls:
+  #   - hosts:
+  #       - gews.example.com
+  #     secretName: gews-tls
+  rules:
+    - host: gews.example.com     # replace with your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gews-dashboard
+                port:
+                  name: http

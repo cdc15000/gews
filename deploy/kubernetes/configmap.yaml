@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gews-config
+  namespace: gews
+  labels:
+    app.kubernetes.io/name: gews
+    app.kubernetes.io/part-of: gews
+data:
+  GEWS_CONFIG: "config/global_watch.yaml"
+  GEWS_INTERVAL: "6"
+  GEWS_DASHBOARD_PORT: "8080"
+  GEWS_SMTP_PORT: "587"

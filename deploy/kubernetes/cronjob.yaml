@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gews-monitor
+  namespace: gews
+  labels:
+    app.kubernetes.io/name: gews
+    app.kubernetes.io/component: monitor
+spec:
+  schedule: "0 */6 * * *"   # every 6 hours
+  concurrencyPolicy: Forbid  # skip if a previous run is still active
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 18000   # 5-hour hard timeout
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: gews
+            app.kubernetes.io/component: monitor
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: monitor
+              image: ghcr.io/gews-project/gews:latest  # replace with your registry
+              command: ["gews", "monitor"]
+              args:
+                - "-c"
+                - "$(GEWS_CONFIG)"
+                - "--check-now"
+              envFrom:
+                - configMapRef:
+                    name: gews-config
+                - secretRef:
+                    name: gews-secrets
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: "2"
+                  memory: 4Gi
+              volumeMounts:
+                - name: gews-data
+                  mountPath: /app/data
+                - name: gews-output
+                  mountPath: /app/output
+                - name: gews-config-vol
+                  mountPath: /app/config
+                  readOnly: true
+          volumes:
+            - name: gews-data
+              persistentVolumeClaim:
+                claimName: gews-data
+            - name: gews-output
+              persistentVolumeClaim:
+                claimName: gews-output
+            - name: gews-config-vol
+              configMap:
+                name: gews-site-config

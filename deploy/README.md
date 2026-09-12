@@ -179,3 +179,66 @@ This runs a single check cycle every 6 hours rather than a persistent process.
 
 For both providers, consider placing the dashboard behind a reverse proxy
 (nginx, Caddy) with TLS if exposing it beyond your network.
+
+## Kubernetes
+
+Full Kubernetes manifests are in `deploy/kubernetes/`.  Apply them in order:
+
+```bash
+kubectl apply -f deploy/kubernetes/namespace.yaml
+kubectl apply -f deploy/kubernetes/configmap.yaml
+kubectl apply -f deploy/kubernetes/secrets.yaml      # edit CHANGEME values first!
+kubectl apply -f deploy/kubernetes/deployment.yaml
+kubectl apply -f deploy/kubernetes/cronjob.yaml
+kubectl apply -f deploy/kubernetes/service.yaml
+kubectl apply -f deploy/kubernetes/ingress.yaml
+kubectl apply -f deploy/kubernetes/pdb.yaml
+```
+
+The manifests include:
+
+- **Deployment** — dashboard with 2 replicas, health checks, and resource limits
+- **CronJob** — monitor pipeline running every 6 hours with a 5-hour timeout
+- **Service** / **Ingress** — ClusterIP service with nginx ingress (TLS placeholder)
+- **PodDisruptionBudget** — keeps at least 1 dashboard pod during disruptions
+- **Secrets** — all values are `CHANGEME` placeholders; use Sealed Secrets or
+  an external secrets manager in production
+
+You will also need to create PersistentVolumeClaims (`gews-data`, `gews-output`)
+and a ConfigMap named `gews-site-config` containing your `global_watch.yaml`.
+
+## AWS ECS Fargate (Terraform)
+
+A complete Terraform configuration is in `deploy/terraform/`.  It provisions
+an ECS Fargate cluster, ALB, EFS persistent storage, and an EventBridge
+schedule for the monitor pipeline.
+
+See [`deploy/terraform/README.md`](terraform/README.md) for prerequisites,
+usage, and outputs.
+
+## Monitoring
+
+Prometheus, Grafana, and Alertmanager configurations are in `deploy/monitoring/`.
+
+| File                        | Purpose                                          |
+|-----------------------------|--------------------------------------------------|
+| `prometheus.yaml`           | Scrape config for dashboard and monitor metrics  |
+| `grafana-dashboard.json`    | Dashboard with detection count, latency, freshness, alert rate, and severity panels |
+| `alertmanager-rules.yaml`   | Alert rules for pipeline failure, stale data (>36 h), and flag spikes |
+
+### Importing the Grafana dashboard
+
+1. Open Grafana and go to **Dashboards > Import**.
+2. Upload `deploy/monitoring/grafana-dashboard.json`.
+3. Select your Prometheus data source when prompted.
+
+### Alert rules
+
+Copy `alertmanager-rules.yaml` into your Prometheus rules directory (or
+reference it in `rule_files` in your `prometheus.yml`).  The rules fire for:
+
+- **GEWSPipelineFailure** (critical) — monitor exited with a non-zero code
+- **GEWSStaleData** (warning) — no successful run in 36 hours
+- **GEWSFlagSpike** (warning) — more than 10 flags raised in 6 hours
+- **GEWSDashboardDown** (critical) — dashboard unreachable
+- **GEWSDashboardHighLatency** (warning) — p95 response time exceeds 2 seconds
