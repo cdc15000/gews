@@ -1,0 +1,645 @@
+# GEWS HKH Priority Watchlist — ~30 High-Risk Glacier Sites
+#
+# Hindu Kush–Himalaya (HKH) and adjacent Central Asian ranges (Pamir,
+# Tien Shan). These are the highest-priority glacier hazard sites in
+# the region, selected for:
+#   - documented GLOF / rock-ice avalanche history
+#   - high downstream exposure (population, hydropower)
+#   - active instability signals in recent satellite imagery
+#
+# Coordinates are WGS84 centroid of the hazard source zone.
+# Use with `gews monitor --config config/hkh_priority.yaml`.
+
+# -------------------------------------------------------------------
+# Shared defaults — see global_watch.yaml for full documentation
+# -------------------------------------------------------------------
+
+acquire:
+  platform: NISAR
+  product_types: ["GUNW", "GOFF"]
+  path_number: null
+  max_scenes: 200
+  n_workers: 4
+
+detect:
+  seasonal_model: "harmonic"
+  n_harmonics: 2
+  acceleration:
+    window_size_days: 60
+    step_days: 12
+    changepoint:
+      model: "rbf"
+      penalty: "bic"
+      min_segment_size: 3
+    sigma_threshold: 2.5
+  step_change:
+    sigma_threshold: 5.0
+    min_displacement_m: 0.5
+  clustering:
+    min_cluster_pixels: 5
+    max_distance_m: 200
+    min_area_m2: 10000
+  voight:
+    enabled: true
+    min_points: 5
+    r_squared_threshold: 0.7
+
+cascade:
+  min_volume_m3: 100000
+  exposure:
+    max_runout_km: 50
+    angle_of_reach_deg: 11
+    population_source: "worldpop"
+  valley_width_threshold_m: 500
+
+report:
+  output_dir: "output"
+  formats: ["html", "geojson"]
+  include_time_series_plots: true
+  include_spatial_maps: true
+  include_cascade_scenarios: true
+
+monitor:
+  interval_hours: 6
+  lookback_days: 30
+  state_dir: "data/monitor_state"
+  alert_dir: "output/alerts"
+  alert_levels:
+    INFO: 1.0
+    WARNING: 1.5
+    CRITICAL: 2.5
+
+# -------------------------------------------------------------------
+# Sites — Nepal
+# -------------------------------------------------------------------
+
+sites:
+
+  - site:
+      name: "Tsho Rolpa, Rolwaling, Nepal"
+      event_date: null
+      description: >
+        One of the largest and most dangerous glacial lakes in Nepal
+        (~1.55 km2, ~80 million m3). Formed behind the terminal moraine
+        of Trakarding Glacier. Siphon-lowered in 2000 but lake continues
+        to grow. GLOF would threaten >6,000 people in the Rolwaling and
+        Tamakoshi valleys. Monitored by DHM Nepal.
+      latitude: 27.86
+      longitude: 86.47
+      elevation_m: 4580
+      hazard_type: "GLOF"
+      priority: "CRITICAL"
+      notes: "Siphon-lowered 2000; lake still expanding; downstream hydropower at risk"
+    acquire:
+      gunw_dir: "data/nisar/hkh/tsho_rolpa/gunw"
+      goff_dir: "data/nisar/hkh/tsho_rolpa/goff"
+
+  - site:
+      name: "Imja Tsho, Khumbu, Nepal"
+      event_date: null
+      description: >
+        Rapidly growing glacial lake at the toe of Imja Glacier in the
+        Everest region (~1.28 km2). Lake did not exist before 1960.
+        Partial lowering by controlled drainage in 2016. GLOF runout
+        would reach Dingboche and communities along the Imja Khola.
+      latitude: 27.90
+      longitude: 86.93
+      elevation_m: 5010
+      hazard_type: "GLOF"
+      priority: "CRITICAL"
+      notes: "Lake lowered 3.4 m in 2016; regrowth ongoing; Khumbu valley exposure"
+    acquire:
+      gunw_dir: "data/nisar/hkh/imja_tsho/gunw"
+      goff_dir: "data/nisar/hkh/imja_tsho/goff"
+
+  - site:
+      name: "Thulagi (Dona) Lake, Manaslu, Nepal"
+      event_date: null
+      description: >
+        Supraglacial lake on Thulagi Glacier, Marsyangdi valley. Lake
+        area ~0.9 km2. GLOF simulations show flood wave reaching
+        Tal and Dharapani within 2 hours. Steep moraine dam with
+        seepage observed.
+      latitude: 28.49
+      longitude: 84.46
+      elevation_m: 4920
+      hazard_type: "GLOF"
+      priority: "HIGH"
+      notes: "Steep unstable moraine; Marsyangdi Hydropower downstream"
+    acquire:
+      gunw_dir: "data/nisar/hkh/thulagi/gunw"
+      goff_dir: "data/nisar/hkh/thulagi/goff"
+
+  - site:
+      name: "Dig Tsho, Langmoche, Nepal"
+      event_date: "1985-08-04"
+      description: >
+        Site of Nepal's best-documented GLOF (4 Aug 1985). An ice
+        avalanche from Langmoche Glacier into the lake triggered a
+        moraine breach, destroying Namche small hydropower plant and
+        killing 5 people. Lake has partially refilled and remains a
+        reference site for GLOF hazard research.
+      latitude: 27.87
+      longitude: 86.58
+      elevation_m: 4365
+      hazard_type: "GLOF"
+      priority: "HIGH"
+      notes: "1985 GLOF precedent; lake partially refilled; reference monitoring site"
+    acquire:
+      gunw_dir: "data/nisar/hkh/dig_tsho/gunw"
+      goff_dir: "data/nisar/hkh/dig_tsho/goff"
+
+  - site:
+      name: "Lumding Tsho, Hinku, Nepal"
+      event_date: null
+      description: >
+        Growing glacial lake in the Hinku valley fed by Lumding
+        Glacier. Classified as potentially dangerous by ICIMOD.
+        GLOF would impact settlements along the Hinku and Hongu
+        valleys.
+      latitude: 27.78
+      longitude: 86.62
+      elevation_m: 4831
+      hazard_type: "GLOF"
+      priority: "HIGH"
+      notes: "ICIMOD hazard classification; growing lake area"
+    acquire:
+      gunw_dir: "data/nisar/hkh/lumding_tsho/gunw"
+      goff_dir: "data/nisar/hkh/lumding_tsho/goff"
+
+  - site:
+      name: "Lower Barun Glacier Lake, Nepal"
+      event_date: null
+      description: >
+        Large and rapidly expanding glacial lake at the toe of the
+        Lower Barun Glacier, east of Makalu. Lake area has grown
+        >10x since the 1960s. GLOF runout would enter the Arun River,
+        threatening downstream communities and the Arun III hydropower
+        project.
+      latitude: 27.80
+      longitude: 87.09
+      elevation_m: 4550
+      hazard_type: "GLOF"
+      priority: "HIGH"
+      notes: "Rapid lake growth; Arun III hydropower project downstream"
+    acquire:
+      gunw_dir: "data/nisar/hkh/lower_barun/gunw"
+      goff_dir: "data/nisar/hkh/lower_barun/goff"
+
+  # -------------------------------------------------------------------
+  # Sites — India
+  # -------------------------------------------------------------------
+
+  - site:
+      name: "Ronti Peak / Chamoli, Uttarakhand, India"
+      event_date: "2021-02-07"
+      description: >
+        Rock-ice avalanche from the north face of Ronti peak that
+        generated a catastrophic debris flow killing >200 people and
+        destroying two hydropower plants (Feb 2021). Pre-event InSAR
+        showed years of creep (Shugar et al. 2021). Adjacent slopes
+        remain unstable.
+      latitude: 30.38
+      longitude: 79.73
+      elevation_m: 5600
+      hazard_type: "rock-ice avalanche"
+      priority: "CRITICAL"
+      notes: "2021 disaster precedent; adjacent slopes show similar lithology"
+    acquire:
+      gunw_dir: "data/nisar/hkh/chamoli/gunw"
+      goff_dir: "data/nisar/hkh/chamoli/goff"
+    detect:
+      acceleration:
+        sigma_threshold: 2.0
+
+  - site:
+      name: "Kedarnath, Uttarakhand, India"
+      event_date: "2013-06-17"
+      description: >
+        The June 2013 Kedarnath disaster killed >6,000 people when
+        Chorabari Glacier lake burst and triggered massive debris flows
+        through the temple town. The Chorabari Tal (Gandhi Sarovar)
+        moraine-dammed lake is being monitored for reformation.
+      latitude: 30.73
+      longitude: 79.07
+      elevation_m: 3580
+      hazard_type: "GLOF / debris flow"
+      priority: "CRITICAL"
+      notes: "2013 catastrophe; Chorabari lake reforming; high pilgrim population"
+    acquire:
+      gunw_dir: "data/nisar/hkh/kedarnath/gunw"
+      goff_dir: "data/nisar/hkh/kedarnath/goff"
+
+  - site:
+      name: "Gangotri Glacier, Uttarakhand, India"
+      event_date: null
+      description: >
+        Source of the Bhagirathi River (Ganges headwater). One of the
+        largest Himalayan glaciers (~30 km long), retreating ~22 m/yr.
+        Proglacial lake formation at the terminus and lateral moraine
+        instability are growing concerns. Cultural and water-security
+        significance.
+      latitude: 30.92
+      longitude: 79.08
+      elevation_m: 4000
+      hazard_type: "moraine instability / proglacial lake"
+      priority: "HIGH"
+      notes: "Major Ganges headwater; accelerating retreat; national monitoring by GSI"
+    acquire:
+      gunw_dir: "data/nisar/hkh/gangotri/gunw"
+      goff_dir: "data/nisar/hkh/gangotri/goff"
+
+  - site:
+      name: "Satopanth Glacier, Uttarakhand, India"
+      event_date: null
+      description: >
+        Valley glacier descending from the Chaukhamba massif. Satopanth
+        Tal, a moraine-dammed lake at ~4600 m, is expanding as the
+        glacier retreats. Located upstream of Badrinath pilgrimage town.
+      latitude: 30.72
+      longitude: 79.33
+      elevation_m: 4600
+      hazard_type: "GLOF"
+      priority: "HIGH"
+      notes: "Expanding moraine-dammed lake; Badrinath town downstream"
+    acquire:
+      gunw_dir: "data/nisar/hkh/satopanth/gunw"
+      goff_dir: "data/nisar/hkh/satopanth/goff"
+
+  - site:
+      name: "South Lhonak Lake, Sikkim, India"
+      event_date: "2023-10-04"
+      description: >
+        Glacial lake in North Sikkim that burst on 4 Oct 2023 following
+        heavy rain, sending a flood pulse down the Teesta River that
+        destroyed the Chungthang dam and killed >40 people. Lake had
+        been flagged as dangerous since 2013.
+      latitude: 27.93
+      longitude: 88.20
+      elevation_m: 5200
+      hazard_type: "GLOF"
+      priority: "CRITICAL"
+      notes: "2023 GLOF destroyed Chungthang dam; Teesta valley exposure"
+    acquire:
+      gunw_dir: "data/nisar/hkh/south_lhonak/gunw"
+      goff_dir: "data/nisar/hkh/south_lhonak/goff"
+
+  # -------------------------------------------------------------------
+  # Sites — Pakistan
+  # -------------------------------------------------------------------
+
+  - site:
+      name: "Shishper Glacier, Hunza, Pakistan"
+      event_date: null
+      description: >
+        Surge-type glacier in the Hunza valley that has surged
+        repeatedly (2018-19, 2023), damming the Hassanabad Nullah
+        and creating an ice-dammed lake. GLOF from the lake destroyed
+        the Hassanabad bridge in 2022. Karakoram Highway at risk.
+      latitude: 36.42
+      longitude: 74.55
+      elevation_m: 2700
+      hazard_type: "surge / ice-dam GLOF"
+      priority: "CRITICAL"
+      notes: "Repeated surges; KKH bridge destroyed 2022; ongoing threat"
+    acquire:
+      gunw_dir: "data/nisar/hkh/shishper/gunw"
+      goff_dir: "data/nisar/hkh/shishper/goff"
+    detect:
+      acceleration:
+        sigma_threshold: 2.0
+
+  - site:
+      name: "Khurdopin Glacier, Shimshal, Pakistan"
+      event_date: null
+      description: >
+        Surge-type glacier in the Shimshal valley, Karakoram. Last
+        major surge in 2017 dammed the Virjerab River forming a
+        ~1 km lake. Previous surges documented in 1979 and 1999.
+        GLOF from the ice dam threatens Shimshal village and
+        downstream Hunza communities.
+      latitude: 36.28
+      longitude: 75.43
+      elevation_m: 3900
+      hazard_type: "surge / ice-dam GLOF"
+      priority: "HIGH"
+      notes: "Surge cycle ~20 yr; 2017 surge dammed Virjerab River"
+    acquire:
+      gunw_dir: "data/nisar/hkh/khurdopin/gunw"
+      goff_dir: "data/nisar/hkh/khurdopin/goff"
+
+  - site:
+      name: "Baltoro Glacier, Karakoram, Pakistan"
+      event_date: null
+      description: >
+        One of the world's longest non-polar glaciers (~63 km).
+        Surge-type tributaries and supraglacial lake development
+        create GLOF precursors. K2 and Broad Peak base camps on
+        the glacier. Downstream communities along the Braldu and
+        Shigar rivers.
+      latitude: 35.73
+      longitude: 76.31
+      elevation_m: 3400
+      hazard_type: "surge / GLOF precursor"
+      priority: "MODERATE"
+      notes: "Surge-type tributaries; supraglacial lake development"
+    acquire:
+      gunw_dir: "data/nisar/hkh/baltoro/gunw"
+      goff_dir: "data/nisar/hkh/baltoro/goff"
+
+  - site:
+      name: "Passu Glacier, Hunza, Pakistan"
+      event_date: null
+      description: >
+        Steep glacier above Passu village and the Karakoram Highway.
+        History of ice avalanches and GLOF events from ice-dammed
+        lakes at the glacier margin. The glacier has thinned
+        significantly, destabilizing lateral moraines.
+      latitude: 36.46
+      longitude: 74.88
+      elevation_m: 2700
+      hazard_type: "ice avalanche / GLOF"
+      priority: "HIGH"
+      notes: "KKH and Passu village directly exposed; moraine instability"
+    acquire:
+      gunw_dir: "data/nisar/hkh/passu/gunw"
+      goff_dir: "data/nisar/hkh/passu/goff"
+
+  - site:
+      name: "Ghulkin Glacier, Hunza, Pakistan"
+      event_date: null
+      description: >
+        Glacier terminating directly above Ghulkin village and the
+        Karakoram Highway in the upper Hunza valley. History of
+        ice-dammed lake formation and GLOF events threatening the
+        highway and village. Active lateral erosion undermining the KKH.
+      latitude: 36.42
+      longitude: 74.82
+      elevation_m: 2600
+      hazard_type: "ice-dam GLOF / ice avalanche"
+      priority: "HIGH"
+      notes: "KKH directly exposed; ice dam forms recurrently"
+    acquire:
+      gunw_dir: "data/nisar/hkh/ghulkin/gunw"
+      goff_dir: "data/nisar/hkh/ghulkin/goff"
+
+  # -------------------------------------------------------------------
+  # Sites — Tibet (China)
+  # -------------------------------------------------------------------
+
+  - site:
+      name: "Aru Glaciers, Western Tibet"
+      event_date: "2016-07-17"
+      description: >
+        Twin glacier collapses in the Aru Range (Jul and Sep 2016).
+        Each released ~70 million m3 from low-angle (~15 deg) beds —
+        attributed to permafrost warming and subglacial meltwater
+        pressurization. Nine herders killed.
+      latitude: 34.00
+      longitude: 82.24
+      elevation_m: 5800
+      hazard_type: "glacier detachment"
+      priority: "CRITICAL"
+      notes: "Unprecedented low-angle detachment; permafrost degradation driver"
+    acquire:
+      gunw_dir: "data/nisar/hkh/aru/gunw"
+      goff_dir: "data/nisar/hkh/aru/goff"
+    detect:
+      acceleration:
+        sigma_threshold: 2.0
+
+  - site:
+      name: "Sedongpu Glacier, SE Tibet"
+      event_date: null
+      description: >
+        Sedongpu basin on the Yarlung Tsangpo, site of repeated large
+        glacial debris flows since 2017. Rock-ice avalanches onto the
+        glacier tongue generate massive debris flows that dam the gorge.
+        The narrow Tsangpo gorge amplifies flood risk downstream.
+      latitude: 29.98
+      longitude: 94.87
+      elevation_m: 3400
+      hazard_type: "rock-ice avalanche / debris flow"
+      priority: "CRITICAL"
+      notes: "Repeat failures since 2017; Yarlung Tsangpo gorge amplifies hazard"
+    acquire:
+      gunw_dir: "data/nisar/hkh/sedongpu/gunw"
+      goff_dir: "data/nisar/hkh/sedongpu/goff"
+    detect:
+      acceleration:
+        sigma_threshold: 2.0
+
+  # -------------------------------------------------------------------
+  # Sites — Bhutan
+  # -------------------------------------------------------------------
+
+  - site:
+      name: "Thorthormi Glacier Lake, Bhutan"
+      event_date: null
+      description: >
+        Large and rapidly growing glacial lake in the Lunana region,
+        northern Bhutan. Thorthormi is merging with the adjacent
+        Raphstreng Tsho, increasing total lake volume. A GLOF from
+        Raphstreng in 1994 killed 21 people. Combined lake GLOF would
+        threaten the Punakha-Wangdue valley (>100,000 people).
+      latitude: 28.10
+      longitude: 90.25
+      elevation_m: 4430
+      hazard_type: "GLOF"
+      priority: "CRITICAL"
+      notes: "Merging with Raphstreng; 1994 GLOF precedent; Punakha valley exposure"
+    acquire:
+      gunw_dir: "data/nisar/hkh/thorthormi/gunw"
+      goff_dir: "data/nisar/hkh/thorthormi/goff"
+
+  # -------------------------------------------------------------------
+  # Sites — Afghanistan
+  # -------------------------------------------------------------------
+
+  - site:
+      name: "Bamiyan Glacier Lakes, Afghanistan"
+      event_date: null
+      description: >
+        Glacial lakes in the Band-e-Amir / Koh-i-Baba range, central
+        Afghanistan. Poorly monitored but moraine-dammed lakes are
+        expanding with glacier retreat. Downstream agricultural
+        communities with no warning infrastructure.
+      latitude: 34.83
+      longitude: 67.82
+      elevation_m: 3800
+      hazard_type: "GLOF"
+      priority: "HIGH"
+      notes: "Very limited monitoring; expanding moraine-dammed lakes"
+    acquire:
+      gunw_dir: "data/nisar/hkh/bamiyan/gunw"
+      goff_dir: "data/nisar/hkh/bamiyan/goff"
+
+  - site:
+      name: "Wakhan Corridor Glaciers, Afghanistan"
+      event_date: null
+      description: >
+        Glaciers draining the Afghan Pamir and Hindu Kush into the
+        Wakhan Corridor. Several moraine-dammed lakes have been
+        identified as potentially dangerous. Remote area with
+        minimal monitoring capacity.
+      latitude: 36.90
+      longitude: 71.80
+      elevation_m: 4500
+      hazard_type: "GLOF"
+      priority: "MODERATE"
+      notes: "Remote; minimal ground-based monitoring; satellite-only feasible"
+    acquire:
+      gunw_dir: "data/nisar/hkh/wakhan/gunw"
+      goff_dir: "data/nisar/hkh/wakhan/goff"
+
+  # -------------------------------------------------------------------
+  # Sites — Tajikistan (Pamir)
+  # -------------------------------------------------------------------
+
+  - site:
+      name: "Medvezhiy Glacier, Pamir, Tajikistan"
+      event_date: null
+      description: >
+        Well-known surge-type glacier in the Vanch Range, western Pamir.
+        Surged repeatedly (1963, 1973, 1989, 2011), blocking the Abdukagor
+        River and creating ice-dammed lakes. GLOF risk during and after
+        surge events.
+      latitude: 38.58
+      longitude: 72.13
+      elevation_m: 4000
+      hazard_type: "surge / ice-dam GLOF"
+      priority: "HIGH"
+      notes: "Surge cycle ~10-15 yr; well-documented Soviet-era monitoring history"
+    acquire:
+      gunw_dir: "data/nisar/hkh/medvezhiy/gunw"
+      goff_dir: "data/nisar/hkh/medvezhiy/goff"
+
+  - site:
+      name: "Fedchenko Glacier, Pamir, Tajikistan"
+      event_date: null
+      description: >
+        Longest glacier outside the polar regions (~77 km). Accelerating
+        thinning since the 1980s. Proglacial and supraglacial lake
+        development at the terminus. The glacier feeds the Muksu River
+        system with downstream GLOF exposure.
+      latitude: 38.83
+      longitude: 72.20
+      elevation_m: 4169
+      hazard_type: "proglacial lake / moraine instability"
+      priority: "MODERATE"
+      notes: "Longest non-polar glacier; accelerating thinning; benchmark site"
+    acquire:
+      gunw_dir: "data/nisar/hkh/fedchenko/gunw"
+      goff_dir: "data/nisar/hkh/fedchenko/goff"
+
+  - site:
+      name: "Lake Sarez, Pamir, Tajikistan"
+      event_date: "1911-02-18"
+      description: >
+        Massive landslide-dammed lake formed by the 1911 Usoi earthquake
+        (M7.4). The Usoi Dam (~567 m high, world's tallest natural dam)
+        impounds ~17 km3 of water. Dam breach would produce a mega-flood
+        affecting millions downstream along the Bartang, Panj, and
+        Amu Darya rivers. Monitored with World Bank support since 2000.
+      latitude: 38.27
+      longitude: 72.67
+      elevation_m: 3263
+      hazard_type: "landslide-dam breach"
+      priority: "CRITICAL"
+      notes: "17 km3 impounded; dam breach would affect Tajikistan, Afghanistan, Uzbekistan"
+    acquire:
+      gunw_dir: "data/nisar/hkh/sarez/gunw"
+      goff_dir: "data/nisar/hkh/sarez/goff"
+
+  - site:
+      name: "Rivakkul Glacier, Pamir, Tajikistan"
+      event_date: null
+      description: >
+        Surge-type glacier in the eastern Pamir that has produced
+        ice-dammed lakes during past surges. Limited modern monitoring.
+        Downstream communities in the Murghab district.
+      latitude: 38.95
+      longitude: 73.50
+      elevation_m: 4200
+      hazard_type: "surge / ice-dam GLOF"
+      priority: "MODERATE"
+      notes: "Eastern Pamir; limited monitoring; Murghab district exposure"
+    acquire:
+      gunw_dir: "data/nisar/hkh/rivakkul/gunw"
+      goff_dir: "data/nisar/hkh/rivakkul/goff"
+
+  # -------------------------------------------------------------------
+  # Sites — Kyrgyzstan (Tien Shan)
+  # -------------------------------------------------------------------
+
+  - site:
+      name: "Petrov Glacier / Lake, Tien Shan, Kyrgyzstan"
+      event_date: "2012-07-06"
+      description: >
+        Petrov Lake at the terminus of Petrov Glacier experienced a
+        GLOF on 6 Jul 2012 that released ~5.2 million m3 through a
+        moraine breach, flooding the Kumtor gold mine area. The lake
+        continues to expand with glacier retreat.
+      latitude: 41.83
+      longitude: 78.22
+      elevation_m: 3740
+      hazard_type: "GLOF"
+      priority: "HIGH"
+      notes: "2012 GLOF precedent; Kumtor mine infrastructure downstream"
+    acquire:
+      gunw_dir: "data/nisar/hkh/petrov/gunw"
+      goff_dir: "data/nisar/hkh/petrov/goff"
+
+  - site:
+      name: "Inylchek Glacier, Central Tien Shan, Kyrgyzstan"
+      event_date: null
+      description: >
+        One of the largest Tien Shan glaciers (~60 km). The South
+        Inylchek Glacier dams Lake Merzbacher, which produces annual
+        jokulhlaup-type outburst floods (typically late summer) into
+        the Inylchek River. Flood volumes can exceed 200 million m3.
+      latitude: 42.15
+      longitude: 79.98
+      elevation_m: 3300
+      hazard_type: "jokulhlaup / ice-dam GLOF"
+      priority: "HIGH"
+      notes: "Annual Merzbacher Lake outbursts; flood volumes >200 Mm3"
+    acquire:
+      gunw_dir: "data/nisar/hkh/inylchek/gunw"
+      goff_dir: "data/nisar/hkh/inylchek/goff"
+
+  - site:
+      name: "Ak-Say Glacier, Ala Archa, Kyrgyzstan"
+      event_date: null
+      description: >
+        Glacier above the Ala Archa National Park near Bishkek. Ice
+        and rock avalanches from the steep glacier front threaten
+        the popular recreational area. Debris flows from glacier
+        melt have increased in frequency.
+      latitude: 42.53
+      longitude: 74.50
+      elevation_m: 3800
+      hazard_type: "ice avalanche / debris flow"
+      priority: "MODERATE"
+      notes: "Near Bishkek; popular recreation area; increasing debris flow frequency"
+    acquire:
+      gunw_dir: "data/nisar/hkh/aksay/gunw"
+      goff_dir: "data/nisar/hkh/aksay/goff"
+
+  - site:
+      name: "Abramov Glacier, Pamir-Alay, Kyrgyzstan"
+      event_date: null
+      description: >
+        One of the best-studied glaciers in Central Asia with a mass
+        balance record since 1967. Located in the Pamir-Alay range.
+        Accelerating retreat is creating new proglacial lakes.
+        Benchmark site for climate-driven glacier change.
+      latitude: 39.64
+      longitude: 71.57
+      elevation_m: 3870
+      hazard_type: "proglacial lake formation"
+      priority: "MODERATE"
+      notes: "Benchmark glacier; mass balance record since 1967; proglacial lake emerging"
+    acquire:
+      gunw_dir: "data/nisar/hkh/abramov/gunw"
+      goff_dir: "data/nisar/hkh/abramov/goff"
