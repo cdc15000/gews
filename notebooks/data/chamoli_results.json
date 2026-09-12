@@ -8,7 +8,7 @@
     "peak": "Ronti Peak"
   },
   "validation_type": "synthetic_retrospective",
-  "generated": "2026-09-08T02:27:24.917579",
+  "generated": "2026-09-12T12:21:05.008406",
   "asf_search": {
     "nisar_goff_count": 0,
     "nisar_gunw_count": 0,
@@ -27,9 +27,9 @@
   },
   "synthetic_parameters": {
     "note": "These are ASSUMED parameters for a hypothetical precursor scenario. No published study quantifies pre-event InSAR displacement rates at Ronti Peak. Shugar et al. (2021) identified crack widening in optical imagery but did not report InSAR-derived creep rates.",
-    "base_velocity_m_yr": 0.05,
+    "base_velocity_m_yr": 0.5,
     "acceleration_onset_days_before": 120,
-    "max_acceleration_m_yr2": 0.2,
+    "max_acceleration_m_yr2": 25.0,
     "ramp_type": "exponential",
     "failure_zone_radius_pixels": 7,
     "pixel_size_approx_m": 90,
@@ -42,19 +42,32 @@
   "detection_results": {
     "sigma_2_0": {
       "sigma_threshold": 2.0,
-      "total_flags": 207,
-      "flags_near_site_total": 7,
-      "signal_flags": 0,
-      "noise_flags_near_site": 7,
-      "detected": false,
-      "signal_lead_times": [],
+      "total_flags": 204,
+      "flags_near_site_total": 6,
+      "signal_flags": 1,
+      "noise_flags_near_site": 5,
+      "detected": true,
+      "signal_lead_times": [
+        {
+          "flag_id": 362,
+          "score": 13.456,
+          "peak_zscore": 18.8,
+          "area_m2": 6472471.0,
+          "distance_to_injection_m": 701.0,
+          "window_date": "2020-12-29",
+          "operationally_available_date": "2021-01-28",
+          "lead_time_days": 10.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        }
+      ],
       "noise_flags_detail": [
         {
-          "flag_id": 91,
-          "score": 3.869,
+          "flag_id": 92,
+          "score": 3.839,
           "peak_zscore": 3.3,
-          "area_m2": 30895262.0,
-          "distance_to_injection_m": 1664.0,
+          "area_m2": 25734545.0,
+          "distance_to_injection_m": 1891.0,
           "window_date": "2019-10-24",
           "operationally_available_date": "2019-11-23",
           "lead_time_days": 442.0,
@@ -63,10 +76,10 @@
         },
         {
           "flag_id": 14,
-          "score": 3.109,
-          "peak_zscore": 2.51,
-          "area_m2": 1190935.0,
-          "distance_to_injection_m": 1297.0,
+          "score": 3.231,
+          "peak_zscore": 2.67,
+          "area_m2": 1622433.0,
+          "distance_to_injection_m": 1385.0,
           "window_date": "2019-05-09",
           "operationally_available_date": "2019-06-08",
           "lead_time_days": 610.0,
@@ -74,174 +87,194 @@
           "voight_fit": null
         },
         {
-          "flag_id": 101,
-          "score": 2.797,
-          "peak_zscore": 2.32,
-          "area_m2": 86300.0,
-          "distance_to_injection_m": 1951.0,
-          "window_date": "2019-11-17",
-          "operationally_available_date": "2019-12-17",
-          "lead_time_days": 418.0,
-          "detection_tag": "acceleration",
-          "voight_fit": null
-        },
-        {
-          "flag_id": 102,
-          "score": 2.734,
-          "peak_zscore": 2.19,
-          "area_m2": 112189.0,
-          "distance_to_injection_m": 735.0,
-          "window_date": "2019-11-17",
-          "operationally_available_date": "2019-12-17",
-          "lead_time_days": 418.0,
-          "detection_tag": "acceleration",
-          "voight_fit": null
-        },
-        {
-          "flag_id": 29,
-          "score": 2.619,
-          "peak_zscore": 2.13,
-          "area_m2": 43150.0,
-          "distance_to_injection_m": 1799.0,
+          "flag_id": 26,
+          "score": 3.147,
+          "peak_zscore": 2.63,
+          "area_m2": 802586.0,
+          "distance_to_injection_m": 1976.0,
           "window_date": "2019-06-02",
           "operationally_available_date": "2019-07-02",
           "lead_time_days": 586.0,
           "detection_tag": "acceleration",
           "voight_fit": null
+        },
+        {
+          "flag_id": 102,
+          "score": 2.885,
+          "peak_zscore": 2.32,
+          "area_m2": 276159.0,
+          "distance_to_injection_m": 1591.0,
+          "window_date": "2019-11-17",
+          "operationally_available_date": "2019-12-17",
+          "lead_time_days": 418.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        },
+        {
+          "flag_id": 67,
+          "score": 2.804,
+          "peak_zscore": 2.23,
+          "area_m2": 207119.0,
+          "distance_to_injection_m": 1344.0,
+          "window_date": "2019-08-13",
+          "operationally_available_date": "2019-09-12",
+          "lead_time_days": 514.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
         }
       ],
-      "max_lead_time_days": null,
-      "earliest_crossing_in_accel_phase": null,
-      "earliest_lead_time_days": null,
+      "max_lead_time_days": 10.0,
+      "earliest_crossing_in_accel_phase": {
+        "window_index": 51,
+        "window_date": "2020-11-23",
+        "operationally_available_date": "2020-12-23",
+        "lead_time_days": 46.0,
+        "n_pixels_exceeding": 63,
+        "peak_zscore": 3.23
+      },
+      "earliest_lead_time_days": 46.0,
       "earliest_noise_crossing": {
-        "window_index": 4,
-        "window_date": "2019-05-09",
-        "operationally_available_date": "2019-06-08",
-        "lead_time_days": 610.0,
-        "n_pixels_exceeding": 13,
-        "peak_zscore": 2.27
+        "window_index": 27,
+        "window_date": "2020-02-09",
+        "operationally_available_date": "2020-03-10",
+        "lead_time_days": 334.0,
+        "n_pixels_exceeding": 18,
+        "peak_zscore": 2.1
       },
       "site_zscore_diagnostic": {
         "pixel_row_col": [
           60,
           125
         ],
-        "max_zscore_overall": 2.803,
-        "max_zscore_in_accel_phase": 1.747,
-        "max_zscore_pre_accel_phase": 2.803,
+        "max_zscore_overall": 16.888,
+        "max_zscore_in_accel_phase": 16.888,
+        "max_zscore_pre_accel_phase": 2.004,
         "n_windows_total": 55,
         "n_windows_in_accel_phase": 7,
         "zscore_timeseries": [
           {
             "date": "2020-07-14",
-            "peak_zscore": 0.55,
-            "acceleration_m_yr2": -0.502039,
+            "peak_zscore": 0.981,
+            "acceleration_m_yr2": -5.632034,
             "in_accel_phase": false
           },
           {
             "date": "2020-07-26",
-            "peak_zscore": 2.091,
-            "acceleration_m_yr2": 2.177436,
+            "peak_zscore": 0.936,
+            "acceleration_m_yr2": -5.740848,
             "in_accel_phase": false
           },
           {
             "date": "2020-08-07",
-            "peak_zscore": 0.648,
-            "acceleration_m_yr2": 0.70671,
+            "peak_zscore": 1.03,
+            "acceleration_m_yr2": -6.582373,
             "in_accel_phase": false
           },
           {
             "date": "2020-08-19",
-            "peak_zscore": 1.532,
-            "acceleration_m_yr2": -1.441087,
+            "peak_zscore": 0.959,
+            "acceleration_m_yr2": -6.382361,
             "in_accel_phase": false
           },
           {
             "date": "2020-08-31",
-            "peak_zscore": 0.642,
-            "acceleration_m_yr2": -0.61553,
+            "peak_zscore": 0.436,
+            "acceleration_m_yr2": -2.205358,
             "in_accel_phase": false
           },
           {
             "date": "2020-09-12",
-            "peak_zscore": 1.165,
-            "acceleration_m_yr2": 1.14969,
+            "peak_zscore": 0.325,
+            "acceleration_m_yr2": 3.020889,
             "in_accel_phase": false
           },
           {
             "date": "2020-09-24",
-            "peak_zscore": 0.521,
-            "acceleration_m_yr2": -0.511751,
+            "peak_zscore": 0.701,
+            "acceleration_m_yr2": 5.369154,
             "in_accel_phase": false
           },
           {
             "date": "2020-10-06",
-            "peak_zscore": 0.844,
-            "acceleration_m_yr2": 0.843306,
+            "peak_zscore": 1.087,
+            "acceleration_m_yr2": 7.784202,
             "in_accel_phase": false
           },
           {
             "date": "2020-10-18",
-            "peak_zscore": 1.379,
-            "acceleration_m_yr2": -1.400377,
+            "peak_zscore": 0.933,
+            "acceleration_m_yr2": 9.185278,
             "in_accel_phase": true
           },
           {
             "date": "2020-10-30",
-            "peak_zscore": 1.347,
-            "acceleration_m_yr2": -1.264734,
+            "peak_zscore": 0.566,
+            "acceleration_m_yr2": 5.762119,
             "in_accel_phase": true
           },
           {
             "date": "2020-11-11",
-            "peak_zscore": 0.723,
-            "acceleration_m_yr2": -0.701859,
+            "peak_zscore": 0.917,
+            "acceleration_m_yr2": -5.400439,
             "in_accel_phase": true
           },
           {
             "date": "2020-11-23",
-            "peak_zscore": 0.893,
-            "acceleration_m_yr2": 0.890462,
+            "peak_zscore": 2.442,
+            "acceleration_m_yr2": -17.463148,
             "in_accel_phase": true
           },
           {
             "date": "2020-12-05",
-            "peak_zscore": 0.983,
-            "acceleration_m_yr2": 0.991322,
+            "peak_zscore": 5.619,
+            "acceleration_m_yr2": -41.748311,
             "in_accel_phase": true
           },
           {
             "date": "2020-12-17",
-            "peak_zscore": 1.23,
-            "acceleration_m_yr2": 1.211907,
+            "peak_zscore": 10.137,
+            "acceleration_m_yr2": -62.36703,
             "in_accel_phase": true
           },
           {
             "date": "2020-12-29",
-            "peak_zscore": 1.747,
-            "acceleration_m_yr2": -1.630417,
+            "peak_zscore": 16.888,
+            "acceleration_m_yr2": -120.224489,
             "in_accel_phase": true
           }
         ],
-        "interpretation": "Peak z-score at injection site: 1.75 during acceleration phase vs 2.80 before onset. The signal is NOT clearly distinguishable from background noise at the assumed acceleration rate."
+        "interpretation": "Peak z-score at injection site: 16.89 during acceleration phase vs 2.00 before onset. The signal IS distinguishable from noise at the pixel level but gets absorbed into large spatial clusters by DBSCAN, preventing focused detection."
       },
-      "false_positive_note": "7 flag(s) near the site are noise (pre-onset or oversized clusters). At sigma=2.0, the detector produces 207 total flags across the scene, most of which are false positives."
+      "false_positive_note": "5 flag(s) near the site are noise (pre-onset or oversized clusters). At sigma=2.0, the detector produces 204 total flags across the scene, most of which are false positives."
     },
     "sigma_2_5": {
       "sigma_threshold": 2.5,
-      "total_flags": 134,
-      "flags_near_site_total": 1,
-      "signal_flags": 0,
+      "total_flags": 138,
+      "flags_near_site_total": 2,
+      "signal_flags": 1,
       "noise_flags_near_site": 1,
-      "detected": false,
-      "signal_lead_times": [],
+      "detected": true,
+      "signal_lead_times": [
+        {
+          "flag_id": 181,
+          "score": 13.545,
+          "peak_zscore": 18.8,
+          "area_m2": 6187682.0,
+          "distance_to_injection_m": 716.0,
+          "window_date": "2020-12-29",
+          "operationally_available_date": "2021-01-28",
+          "lead_time_days": 10.0,
+          "detection_tag": "acceleration",
+          "voight_fit": null
+        }
+      ],
       "noise_flags_detail": [
         {
-          "flag_id": 57,
-          "score": 3.85,
-          "peak_zscore": 3.3,
-          "area_m2": 9587887.0,
-          "distance_to_injection_m": 1267.0,
+          "flag_id": 59,
+          "score": 3.327,
+          "peak_zscore": 2.89,
+          "area_m2": 284789.0,
+          "distance_to_injection_m": 1817.0,
           "window_date": "2019-10-24",
           "operationally_available_date": "2019-11-23",
           "lead_time_days": 442.0,
@@ -249,130 +282,155 @@
           "voight_fit": null
         }
       ],
-      "max_lead_time_days": null,
-      "earliest_crossing_in_accel_phase": null,
-      "earliest_lead_time_days": null,
+      "max_lead_time_days": 10.0,
+      "earliest_crossing_in_accel_phase": {
+        "window_index": 51,
+        "window_date": "2020-11-23",
+        "operationally_available_date": "2020-12-23",
+        "lead_time_days": 46.0,
+        "n_pixels_exceeding": 13,
+        "peak_zscore": 3.23
+      },
+      "earliest_lead_time_days": 46.0,
       "earliest_noise_crossing": {
-        "window_index": 18,
-        "window_date": "2019-10-24",
-        "operationally_available_date": "2019-11-23",
-        "lead_time_days": 442.0,
-        "n_pixels_exceeding": 91,
-        "peak_zscore": 3.03
+        "window_index": 51,
+        "window_date": "2020-11-23",
+        "operationally_available_date": "2020-12-23",
+        "lead_time_days": 46.0,
+        "n_pixels_exceeding": 13,
+        "peak_zscore": 3.23
       },
       "site_zscore_diagnostic": {
         "pixel_row_col": [
           60,
           125
         ],
-        "max_zscore_overall": 2.803,
-        "max_zscore_in_accel_phase": 1.747,
-        "max_zscore_pre_accel_phase": 2.803,
+        "max_zscore_overall": 16.888,
+        "max_zscore_in_accel_phase": 16.888,
+        "max_zscore_pre_accel_phase": 2.004,
         "n_windows_total": 55,
         "n_windows_in_accel_phase": 7,
         "zscore_timeseries": [
           {
             "date": "2020-07-14",
-            "peak_zscore": 0.55,
-            "acceleration_m_yr2": -0.502039,
+            "peak_zscore": 0.981,
+            "acceleration_m_yr2": -5.632034,
             "in_accel_phase": false
           },
           {
             "date": "2020-07-26",
-            "peak_zscore": 2.091,
-            "acceleration_m_yr2": 2.177436,
+            "peak_zscore": 0.936,
+            "acceleration_m_yr2": -5.740848,
             "in_accel_phase": false
           },
           {
             "date": "2020-08-07",
-            "peak_zscore": 0.648,
-            "acceleration_m_yr2": 0.70671,
+            "peak_zscore": 1.03,
+            "acceleration_m_yr2": -6.582373,
             "in_accel_phase": false
           },
           {
             "date": "2020-08-19",
-            "peak_zscore": 1.532,
-            "acceleration_m_yr2": -1.441087,
+            "peak_zscore": 0.959,
+            "acceleration_m_yr2": -6.382361,
             "in_accel_phase": false
           },
           {
             "date": "2020-08-31",
-            "peak_zscore": 0.642,
-            "acceleration_m_yr2": -0.61553,
+            "peak_zscore": 0.436,
+            "acceleration_m_yr2": -2.205358,
             "in_accel_phase": false
           },
           {
             "date": "2020-09-12",
-            "peak_zscore": 1.165,
-            "acceleration_m_yr2": 1.14969,
+            "peak_zscore": 0.325,
+            "acceleration_m_yr2": 3.020889,
             "in_accel_phase": false
           },
           {
             "date": "2020-09-24",
-            "peak_zscore": 0.521,
-            "acceleration_m_yr2": -0.511751,
+            "peak_zscore": 0.701,
+            "acceleration_m_yr2": 5.369154,
             "in_accel_phase": false
           },
           {
             "date": "2020-10-06",
-            "peak_zscore": 0.844,
-            "acceleration_m_yr2": 0.843306,
+            "peak_zscore": 1.087,
+            "acceleration_m_yr2": 7.784202,
             "in_accel_phase": false
           },
           {
             "date": "2020-10-18",
-            "peak_zscore": 1.379,
-            "acceleration_m_yr2": -1.400377,
+            "peak_zscore": 0.933,
+            "acceleration_m_yr2": 9.185278,
             "in_accel_phase": true
           },
           {
             "date": "2020-10-30",
-            "peak_zscore": 1.347,
-            "acceleration_m_yr2": -1.264734,
+            "peak_zscore": 0.566,
+            "acceleration_m_yr2": 5.762119,
             "in_accel_phase": true
           },
           {
             "date": "2020-11-11",
-            "peak_zscore": 0.723,
-            "acceleration_m_yr2": -0.701859,
+            "peak_zscore": 0.917,
+            "acceleration_m_yr2": -5.400439,
             "in_accel_phase": true
           },
           {
             "date": "2020-11-23",
-            "peak_zscore": 0.893,
-            "acceleration_m_yr2": 0.890462,
+            "peak_zscore": 2.442,
+            "acceleration_m_yr2": -17.463148,
             "in_accel_phase": true
           },
           {
             "date": "2020-12-05",
-            "peak_zscore": 0.983,
-            "acceleration_m_yr2": 0.991322,
+            "peak_zscore": 5.619,
+            "acceleration_m_yr2": -41.748311,
             "in_accel_phase": true
           },
           {
             "date": "2020-12-17",
-            "peak_zscore": 1.23,
-            "acceleration_m_yr2": 1.211907,
+            "peak_zscore": 10.137,
+            "acceleration_m_yr2": -62.36703,
             "in_accel_phase": true
           },
           {
             "date": "2020-12-29",
-            "peak_zscore": 1.747,
-            "acceleration_m_yr2": -1.630417,
+            "peak_zscore": 16.888,
+            "acceleration_m_yr2": -120.224489,
             "in_accel_phase": true
           }
         ],
-        "interpretation": "Peak z-score at injection site: 1.75 during acceleration phase vs 2.80 before onset. The signal is NOT clearly distinguishable from background noise at the assumed acceleration rate."
+        "interpretation": "Peak z-score at injection site: 16.89 during acceleration phase vs 2.00 before onset. The signal IS distinguishable from noise at the pixel level but gets absorbed into large spatial clusters by DBSCAN, preventing focused detection."
       },
-      "false_positive_note": "1 flag(s) near the site are noise (pre-onset or oversized clusters). At sigma=2.5, the detector produces 134 total flags across the scene, most of which are false positives."
+      "false_positive_note": "1 flag(s) near the site are noise (pre-onset or oversized clusters). At sigma=2.5, the detector produces 138 total flags across the scene, most of which are false positives."
     },
-    "would_gews_have_flagged": false,
-    "earliest_warning_days": null,
-    "how_many_days_before": null,
-    "assessment_summary": "At sigma=2.0, GEWS did not detect the synthetic precursor signal in the acceleration phase (0 signal flag(s), 7 noise flag(s) near site). At sigma=2.5, GEWS did not detect it (0 signal flag(s))."
+    "would_gews_have_flagged": true,
+    "earliest_warning_days": 46.0,
+    "how_many_days_before": 46.0,
+    "assessment_summary": "At sigma=2.0, GEWS detected the synthetic precursor signal in the acceleration phase (1 signal flag(s), 5 noise flag(s) near site). At sigma=2.5, GEWS detected it (1 signal flag(s))."
   },
   "cascade_assessment": {
-    "pipeline_assessments": [],
+    "pipeline_assessments": [
+      {
+        "flag_id": 362,
+        "risk_level": "high",
+        "estimated_volume_m3": 1646664712.0,
+        "slope_angle_deg": 35.0,
+        "elevation_m": 4846.0,
+        "runout_distance_km": 30.4,
+        "population_exposed": 6909,
+        "dam_potential": true,
+        "cascade_score": 5.039,
+        "settlements_exposed": [
+          "Ridge Settlement",
+          "Valley Hamlet",
+          "Mountain Village",
+          "Bridge Village"
+        ]
+      }
+    ],
     "literature_comparison": {
       "note": "Runout and exposure computed using literature-reported values (volume=27 Mm3, elevation drop=4100 m) rather than pipeline-estimated values. The pipeline's volume heuristic (depth = 0.1 * sqrt(area)) underestimates deep-seated rock-ice wedge failures like Chamoli.",
       "volume_m3_literature": 27000000,
@@ -434,8 +492,7 @@
         }
       ],
       "exposure_score": 5.3
-    },
-    "pipeline_assessments_note": "No signal flags detected in the acceleration phase. Pipeline-native cascade assessment skipped because running it on noise clusters would produce meaningless volume estimates. See literature_comparison for the cascade scenario using published event parameters."
+    }
   },
   "event_facts": {
     "failure_volume_m3": 27000000,

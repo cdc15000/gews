@@ -28,11 +28,11 @@ detection and cascade risk pipelines on this synthetic data to answer:
      the system have flagged it — and how far in advance?"
 
 The injected signal assumes:
-    - 50 mm/yr background LOS velocity (slow permafrost creep)
+    - 0.5 m/yr background LOS velocity (active rock-glacier creep)
     - Exponential acceleration beginning ~120 days before collapse,
-      reaching 0.20 m/yr2 — consistent with Voight-type tertiary
-      creep in rock-ice masses
-    - Failure wedge ~500 x 250 m (12-pixel radius at ~30 m posting)
+      reaching ~25 m/yr2 — terminal velocity ~15-20 m/yr consistent
+      with Voight-type tertiary creep in rock-ice masses
+    - Failure wedge ~500 x 250 m (7-pixel radius at ~90 m posting)
 
 These are stated assumptions, not literature-derived measurements.
 
@@ -215,7 +215,7 @@ def build_chamoli_synthetic() -> DisplacementTimeseries:
         start_date="2019-02-20",  # ~2 years of history
         end_date="2021-02-07",    # collapse date
         revisit_days=12,
-        base_velocity_m_yr=0.05,     # 50 mm/yr background creep
+        base_velocity_m_yr=0.5,      # 0.5 m/yr background creep (active rock-glacier)
         velocity_spatial_variation=0.3,
         annual_amplitude_m=0.005,
         semi_annual_amplitude_m=0.002,
@@ -229,7 +229,7 @@ def build_chamoli_synthetic() -> DisplacementTimeseries:
                 "center_col": center_col,
                 "radius_pixels": 7,  # ~500 m diameter at ~90 m pixels
                 "onset_days_before_end": 120,  # acceleration starts ~4 months before
-                "max_acceleration_m_yr2": 0.20,  # Voight-type tertiary creep
+                "max_acceleration_m_yr2": 25.0,  # Voight-type tertiary creep; terminal vel ~15-20 m/yr
                 "ramp_type": "exponential",
             },
         ],
@@ -314,9 +314,11 @@ def run_detection(
     window_half = det_cfg["detect"]["acceleration"]["window_size_days"] / 2.0
     event_ordinal = EVENT_DATE.toordinal()
 
-    # Max plausible area for the injected zone: 5x the theoretical
-    # wedge area to allow for signal spreading
-    max_signal_area_m2 = 5.0 * np.pi * (7 * 90) ** 2  # ~6.2 Mm2
+    # Max plausible area for the injected zone: the Gaussian taper
+    # extends to 3*radius (21 pixels); with a strong signal the full
+    # 3-sigma footprint (~pi*(21*90)^2 ≈ 11 Mm2) lights up, so use
+    # 5x that to accommodate clustering margin.
+    max_signal_area_m2 = 5.0 * np.pi * (21 * 90) ** 2  # ~56 Mm2
 
     all_near_flags = []
     signal_flags = []
@@ -812,9 +814,9 @@ def main():
                 "identified crack widening in optical imagery but did not "
                 "report InSAR-derived creep rates."
             ),
-            "base_velocity_m_yr": 0.05,
+            "base_velocity_m_yr": 0.5,
             "acceleration_onset_days_before": 120,
-            "max_acceleration_m_yr2": 0.20,
+            "max_acceleration_m_yr2": 25.0,
             "ramp_type": "exponential",
             "failure_zone_radius_pixels": 7,
             "pixel_size_approx_m": 90,
