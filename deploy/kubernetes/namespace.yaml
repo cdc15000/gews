@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gews
+  labels:
+    app.kubernetes.io/name: gews
+    app.kubernetes.io/part-of: gews
