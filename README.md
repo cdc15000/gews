@@ -1,26 +1,52 @@
 # GEWS — Glacier Early Warning System
 
-Proof-of-concept InSAR pipeline for satellite detection of unstable glaciers and rock slopes.
+[![CI](https://img.shields.io/badge/CI-passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-377%20passed-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-TBD-yellow)]()
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)]()
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)]()
 
-GEWS screens displacement time series derived from satellite radar (Sentinel-1 C-band and NISAR L-band) for anomalous acceleration — the signal that precedes catastrophic glacier and rock-slope collapses. It implements the Tier 0 (automated screening), Tier 1 (cascade risk filtering with cross-check validation), and Tier 2 (analyst dashboard) stages described in the [GEWS technical proposal](https://claude.ai/code/artifact/02bb2a36-8c0d-4af9-b80d-1349ed9f4ad8), plus an operational `gews monitor` mode that continuously watches 13 configured sites worldwide for new acquisitions and raises alerts via email, Slack, or webhook.
+Satellite-based early warning pipeline for unstable glaciers and rock slopes.
 
-The pipeline comprises 13 Python modules (~7 300 lines) with 170 tests across 10 test files, including end-to-end integration tests and GitHub Actions CI.
+GEWS screens displacement time series derived from satellite radar (Sentinel-1 C-band and NISAR L-band) for anomalous acceleration — the signal that precedes catastrophic glacier and rock-slope collapses. It implements Tier 0 (automated screening), Tier 1 (cascade risk filtering with cross-check validation), and Tier 2 (analyst dashboard) stages, plus an operational `gews monitor` mode that continuously watches 13 configured sites worldwide for new acquisitions and raises alerts via email, Slack, or webhook.
 
-## Key findings — Nepal 2026 case study
+The Glacier Early Warning System comprises **22 Python modules** (~11 400 lines) with **377+ tests** across 18 test files, and exposes **15 CLI commands**. All tests run on synthetic data with no network access required.
 
-Retrospective analysis of the August 26, 2026 Nepal–Tibet border glacier–rock collapse against archived NISAR data validated the detection approach against a real event:
+---
 
-- **43 days of advance notice** — the sigma-threshold acceleration-anomaly detector flagged the site well ahead of the collapse, even though Voight's inverse-velocity law failed to converge for this event (the failure was a two-phase step-change, not smooth pre-failure acceleration).
+## Validation Results
+
+Retrospective and synthetic validation against four glacier/rock-slope collapse events:
+
+| Event | Type | Lead Time | Key Metric | Data Source |
+|-------|------|-----------|------------|-------------|
+| **Nepal–Tibet Border 2026** | Real event (26 Aug 2026) | **43 days** | 5.06 m vertical subsidence, 295 GOFF anomaly flags | NISAR GOFF L-band |
+| **Weisshorn (Randa), Switzerland** | Real event | N/A | **81 mm** cumulative displacement detected | Sentinel-1 C-band |
+| **Chamoli, India (Feb 2021)** | Synthetic reconstruction | **~30 days** | Pre-collapse acceleration detected via z-score | Synthetic (modeled on real event parameters) |
+| **Aru Glaciers, Tibet (Jul 2016)** | Synthetic reconstruction | **39–54 days** | Dual-glacier collapse precursor signals | Synthetic (modeled on real event parameters) |
+
+Details in [docs/validation.md](docs/validation.md).
+
+### Nepal 2026 case study (primary validation)
+
+Retrospective analysis of the August 26, 2026 Nepal–Tibet border glacier–rock collapse against archived NISAR data:
+
+- **43 days of advance notice** — the sigma-threshold acceleration-anomaly detector flagged the site well ahead of the collapse, even though Voight's inverse-velocity law failed to converge (the failure was a two-phase step-change, not smooth pre-failure acceleration).
 - **5.06 m of vertical subsidence** measured in the lead-up to collapse, decomposed from line-of-sight displacement using the site's local incidence geometry.
 - **295 anomaly flags** from NISAR GOFF (amplitude offset-tracking) detection, which stayed coherent through the meter-scale displacement that saturated phase-based (GUNW) InSAR.
 
-These results are what motivated the NISAR loaders (`nisar.py`) and the operational monitoring loop (`monitor.py`): GUNW phase unwrapping is limited to about half a wavelength (~12 cm/cycle for L-band) per interval, so large, fast-moving pre-collapse displacement is only observable via GOFF offset tracking. The Nepal event's two-phase failure mode also motivated the BOCPD and step-change detectors added to `timeseries.py`, which catch abrupt regime shifts that smooth acceleration z-scores can miss.
+These results motivated the NISAR loaders (`nisar.py`) and the operational monitoring loop (`monitor.py`): GUNW phase unwrapping is limited to about half a wavelength (~12 cm/cycle for L-band) per interval, so large, fast-moving pre-collapse displacement is only observable via GOFF offset tracking. The Nepal event's two-phase failure mode also motivated the BOCPD and step-change detectors in `timeseries.py`.
 
-## Quick start
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- `pip install -e .` (or `pip install -e ".[dev]"` for development)
 
 ### Synthetic demo (no satellite data required)
-
-Run the full pipeline on synthetic data mimicking the Nepal 2026 glacier–rock collapse, with no satellite data or InSAR processing tools required:
 
 ```bash
 # Set up environment
@@ -41,7 +67,7 @@ This generates a synthetic InSAR scene with an injected pre-failure acceleration
 
 ### Operational monitoring (real NISAR data)
 
-Once an [Earthdata](#data-requirements) account and `.netrc` are configured, watch one or more real sites for new NISAR acquisitions:
+Once an [Earthdata](#data-requirements) account and `~/.netrc` are configured:
 
 ```bash
 # Single check cycle against the built-in global watchlist, then exit
@@ -51,17 +77,34 @@ gews monitor -c config/global_watch.yaml --check-now
 gews monitor -c config/global_watch.yaml --interval 6
 ```
 
-Each cycle searches ASF DAAC for new GUNW/GOFF products, downloads anything not already seen, re-runs the detection pipeline on the grown time series, and writes any new alerts to `output/alerts/<site>_alerts.json`. State (which products have been seen, which anomalies already alerted on) is checkpointed to `data/monitor_state/` so a restart resumes rather than re-alerting.
+Each cycle searches ASF DAAC for new GUNW/GOFF products, downloads anything not already seen, re-runs the detection pipeline on the grown time series, and writes new alerts to `output/alerts/<site>_alerts.json`. State is checkpointed to `data/monitor_state/` so a restart resumes rather than re-alerting.
 
 ### Analyst dashboard
-
-Review flagged sites in a lightweight web dashboard served from the Python standard library:
 
 ```bash
 gews dashboard -c config/nepal_2026.yaml --data-dir output --port 8080
 ```
 
 Open `http://localhost:8080` to see flagged sites with severity levels, time-series plots, and cascade risk summaries. Analysts can classify flags as Watch / Warning / Cleared.
+
+### Docker (fastest path)
+
+```bash
+docker build -t gews .
+
+# Synthetic demo
+docker run --rm -v "$PWD/output:/app/output" gews demo --output /app/output
+
+# Real monitoring
+docker run --rm \
+    -v "$HOME/.netrc:/root/.netrc:ro" \
+    -v "$PWD/config:/app/config:ro" \
+    -v "$PWD/data:/app/data" \
+    -v "$PWD/output:/app/output" \
+    gews monitor -c config/global_watch.yaml --check-now
+```
+
+---
 
 ## Architecture
 
@@ -91,6 +134,14 @@ Sentinel-1 SLC data         NISAR GUNW / GOFF products
               |                  |   deduplication, scoring;
               +------------------+   integrates BOCPD & step-change
                        |
+            +----------+-----------+
+            v                      v
+  +-- classifier.py --+  +-- atmosphere.py -+
+  | Transfer learning  |  | Stratified &     |
+  | logistic regression|  | turbulent APS    |
+  | scoring (optional) |  | detection/removal|
+  +--------------------+  +------------------+
+                       |
                        v
             +--- crosscheck.py --+   Tier 1 cross-check: coherence,
             |                    |   spatial/temporal consistency,
@@ -112,12 +163,76 @@ Sentinel-1 SLC data         NISAR GUNW / GOFF products
           |                                    |
           +------------------------------------+
           v
- +-- dashboard.py -+   Tier 2: analyst web UI,
- |                 |   severity review, site
- +-----------------+   classification
+ +-- dashboard.py -+   Tier 2: analyst web UI,    +-- mapview.py ---+
+ |                 |   severity review, site  <--> | Interactive      |
+ +-----------------+   classification              | Leaflet map      |
+                                                   +-----------------+
+
+ Supporting modules:
+ +-- spatial.py ----+  +-- tactical.py -+  +-- provenance.py +  +-- benchmark.py +
+ | Spatial analysis  |  | Tactical alert |  | Audit trail &   |  | Performance    |
+ | slope, aspect,    |  | prioritization |  | reproducibility |  | benchmarking   |
+ | viewshed, DEM ops |  | & routing      |  | tracking        |  | suite          |
+ +-----------------+  +----------------+  +-----------------+  +----------------+
+
+ +-- synthetic.py --+  +-- validate.py -+
+ | Synthetic scene   |  | Config schema  |
+ | generation for    |  | validation &   |
+ | testing & demos   |  | checking       |
+ +-----------------+  +----------------+
 ```
 
-## Pipeline stages
+### Module inventory (22 modules)
+
+| Module | Purpose |
+|--------|---------|
+| `acquire.py` | Sentinel-1 SLC search and download from ASF DAAC |
+| `alerts.py` | Multi-channel alert dispatch (email, Slack, webhook) |
+| `atmosphere.py` | Atmospheric phase screen detection and correction |
+| `benchmark.py` | Performance benchmarking suite |
+| `cascade.py` | Tier 1 cascade risk assessment (volume, runout, exposure) |
+| `classifier.py` | Transfer learning logistic-regression scoring |
+| `cli.py` | Click-based CLI with 15 subcommands |
+| `crosscheck.py` | Tier 1 cross-check filters (coherence, spatial, temporal) |
+| `dashboard.py` | Tier 2 analyst web dashboard |
+| `detect.py` | Tier 0 anomaly detection and spatial clustering |
+| `mapview.py` | Interactive Leaflet GeoJSON map viewer |
+| `monitor.py` | Continuous operational monitoring loop |
+| `nisar.py` | NISAR GUNW/GOFF HDF5 loading and SBAS inversion |
+| `process.py` | ISCE-2 + MintPy InSAR processing orchestration |
+| `provenance.py` | Audit trail and reproducibility tracking |
+| `report.py` | Report generation (plots, GeoJSON, Markdown) |
+| `spatial.py` | Spatial analysis — slope, aspect, viewshed, DEM operations |
+| `synthetic.py` | Synthetic InSAR scene generation |
+| `tactical.py` | Tactical alert prioritization and routing |
+| `timeseries.py` | Time-series analysis: seasonal decomposition, z-scores, BOCPD, Voight |
+| `validate.py` | Configuration validation and schema checking |
+| `__init__.py` | Package initialization |
+
+### CLI commands (15)
+
+| Command | Description |
+|---------|-------------|
+| `gews search` | Search ASF archive for Sentinel-1 scenes |
+| `gews download` | Download SLC scenes from ASF |
+| `gews process` | Run InSAR processing (ISCE-2 + MintPy) |
+| `gews detect` | Run Tier 0 anomaly detection |
+| `gews assess` | Run Tier 1 cascade risk assessment |
+| `gews report` | Generate analysis report |
+| `gews monitor` | Continuous monitoring for new NISAR data |
+| `gews dashboard` | Launch Tier 2 analyst review dashboard |
+| `gews map` | Launch interactive GeoJSON map viewer |
+| `gews demo` | Run full pipeline on synthetic data |
+| `gews train` | Train precursor classifier model |
+| `gews validate` | Validate a site configuration file |
+| `gews info` | Show system and dependency information |
+| `gews benchmark` | Run performance benchmarking suite |
+| `gews audit` | Run provenance audit on detection history |
+| `gews version` | Show GEWS version |
+
+---
+
+## Pipeline Stages
 
 ### 1. Data acquisition (`gews search`, `gews download`)
 
@@ -130,7 +245,7 @@ gews download --config config/nepal_2026.yaml
 
 ### 2. InSAR processing (`gews process`)
 
-Wraps ISCE-2 (interferogram generation) and MintPy (time-series inversion) to produce displacement time series from the downloaded SLC data. Generates configuration files and orchestrates the processing workflow.
+Wraps ISCE-2 (interferogram generation) and MintPy (time-series inversion) to produce displacement time series from the downloaded SLC data.
 
 **Prerequisites:** ISCE-2 and MintPy must be installed separately. See [ISCE-2](https://github.com/isce-framework/isce2) and [MintPy](https://github.com/insarlab/MintPy) documentation.
 
@@ -146,61 +261,88 @@ The core analytical component. For each pixel:
 1. **Decomposes** the displacement time series into linear trend + seasonal harmonics + residual
 2. **Estimates acceleration** via sliding-window velocity regression on the residuals
 3. **Normalizes** each pixel's acceleration against its own historical baseline (z-score)
-4. **Detects changepoints** via Bayesian Online Changepoint Detection (BOCPD) with a Student-t observation model, catching abrupt regime shifts that smooth z-scores miss
-5. **Detects step changes** — identifies sudden displacement jumps characteristic of two-phase failures (as observed in the Nepal 2026 event)
+4. **Detects changepoints** via Bayesian Online Changepoint Detection (BOCPD)
+5. **Detects step changes** — sudden displacement jumps characteristic of two-phase failures
 6. **Clusters** spatially connected anomalous pixels using DBSCAN
 7. **Scores and ranks** clusters by composite anomaly score
 8. Optionally fits **Voight's failure law** (inverse-velocity trend) to top candidates
+9. Optionally runs **transfer-learning classifier** scoring via `classifier.py`
 
 No labeled collapse data is required — each site is compared to its own history.
 
-### 4. Tier 1 cross-check filters (`crosscheck.py`)
+### 4. Atmospheric correction (`atmosphere.py`)
 
-Before cascade assessment, each anomaly flag passes through multi-sensor cross-check filters that eliminate false positives:
-- **Coherence quality** — are flagged pixels in areas of adequate interferometric coherence?
-- **Spatial consistency** — is the displacement pattern a contiguous deformation lobe or scattered noise?
-- **Temporal consistency** — does the signal persist across multiple SAR acquisitions?
-- **Optical cross-check** — does Sentinel-2 imagery show visible surface change? (stub — requires optical data access)
+Detects and corrects atmospheric phase screens (APS) that contaminate InSAR measurements:
+- **Stratified APS** — elevation-correlated delay, detected by DEM regression per epoch
+- **Turbulent APS** — spatially correlated noise at 5–50 km scales, detected via power spectrum analysis
 
-Each flag receives a quality assessment and recommendation: retain, demote, or remove.
+### 5. Tier 1 cross-check filters (`crosscheck.py`)
 
-### 5. Cascade risk assessment (`gews assess`)
+Multi-sensor cross-check filters that eliminate false positives:
+- **Coherence quality** — adequate interferometric coherence at flagged pixels
+- **Spatial consistency** — contiguous deformation lobe vs. scattered noise
+- **Temporal consistency** — signal persistence across multiple SAR acquisitions
+- **Optical cross-check** — Sentinel-2 visible surface change (stub)
+
+### 6. Cascade risk assessment (`gews assess`)
 
 Evaluates whether flagged sites can produce dangerous downstream cascades:
 - **Volume estimation** from deformation extent and slope geometry
 - **Valley confinement analysis** from DEM
-- **Empirical runout modeling** — Scheidegger (1973) volume-dependent mobility relation, with angle-of-reach fallback
-- **Population exposure mapping** — estimates affected population within runout zones using WorldPop or similar data, with synthetic settlement generation for testing
+- **Runout modeling** — Scheidegger (1973) volume-dependent mobility relation
+- **Population exposure mapping** — WorldPop or synthetic settlement generation
 
-### 6. NISAR data loading (`nisar.py`)
+### 7. Spatial analysis (`spatial.py`)
 
-Reads NISAR L2 GUNW (unwrapped interferogram) and GOFF (pixel offset) HDF5 products and inverts them into the same `displacement`/`velocity` time-series representation used everywhere else in the pipeline, via a vectorized SBAS (small baseline subset) least-squares inversion. NISAR's L-band (24 cm) wavelength maintains coherence on glaciated and heavily deforming surfaces where Sentinel-1's C-band (5.6 cm) decorrelates; GOFF amplitude offset-tracking further extends coverage to meter-scale displacements that saturate phase-based unwrapping entirely.
+DEM-derived geomorphological analysis:
+- Slope and aspect computation from DEM grids
+- Viewshed analysis for line-of-sight assessments
+- Spatial clustering and neighborhood operations
+- Coordinate transformations and distance calculations
 
-### 7. Operational monitoring (`gews monitor`)
+### 8. NISAR data loading (`nisar.py`)
 
-Turns the retrospective pipeline into a standing watch: `monitor.py` periodically searches ASF DAAC for new NISAR products at each configured site, downloads anything new, re-runs detection on the grown product set, and raises leveled alerts (`INFO`/`WARNING`/`CRITICAL`) for anomalies not already alerted on. Accepts either a single-site config (like `config/nepal_2026.yaml`) or a multi-site watchlist (like `config/global_watch.yaml`) with shared defaults merged per-site. State is checkpointed to disk so restarts resume cleanly.
+Reads NISAR L2 GUNW (unwrapped interferogram) and GOFF (pixel offset) HDF5 products via vectorized SBAS inversion. NISAR's L-band (24 cm) wavelength maintains coherence on glaciated surfaces where Sentinel-1's C-band (5.6 cm) decorrelates; GOFF extends coverage to meter-scale displacements.
+
+### 9. Operational monitoring (`gews monitor`)
+
+Turns the retrospective pipeline into a standing watch. Periodically searches ASF DAAC for new NISAR products, downloads new data, re-runs detection, and raises leveled alerts (`INFO`/`WARNING`/`CRITICAL`).
 
 ```bash
 gews monitor -c config/nepal_2026.yaml --check-now      # single site, one pass
 gews monitor -c config/global_watch.yaml --interval 6   # multi-site, every 6h
 ```
 
-### 8. Alerting (`alerts.py`)
+### 10. Tactical alert prioritization (`tactical.py`)
 
-Alerts are dispatched through configurable channels defined in the site YAML under the `alerts:` key:
+Prioritizes and routes alerts based on urgency, affected population, and responder capacity. Integrates with the cascade risk assessment to produce actionable alert packages.
+
+### 11. Provenance tracking (`provenance.py`)
+
+Records full audit trails for every detection run — input data hashes, configuration snapshots, software versions, and result checksums. Enables reproducibility and forensic review via `gews audit`.
+
+### 12. Benchmarking (`benchmark.py`)
+
+Performance benchmarking suite for profiling detection pipeline throughput, memory usage, and scaling behavior across different scene sizes. Run via `gews benchmark`.
+
+### 13. Alerting (`alerts.py`)
+
+Multi-channel alert dispatch:
 - **Email** — SMTP with TLS, configurable recipients
 - **Slack** — incoming webhook integration
-- **Generic webhook** — HTTP POST with JSON payload for custom integrations
+- **Generic webhook** — HTTP POST with JSON payload
 
 Secrets use `${ENV_VAR}` expansion so credentials stay out of config files.
 
-### 9. Analyst dashboard (`gews dashboard`)
+### 14. Analyst dashboard (`gews dashboard`)
 
-A Tier 2 review interface — a lightweight single-page web dashboard served using only Python's built-in `http.server`. Analysts can review flagged sites by severity (`CRITICAL`/`WARNING`/`INFO`), inspect time-series plots and cascade risk details, and classify flags as Watch / Warning / Cleared. No additional dependencies beyond the Python standard library.
+Tier 2 review interface — a single-page web dashboard using Python's built-in `http.server`. Analysts review flagged sites by severity, inspect time-series plots, and classify flags as Watch / Warning / Cleared.
 
-## Global watchlist
+---
 
-The built-in watchlist (`config/global_watch.yaml`) monitors 13 sites spanning the major glacier and rock-slope hazard regions:
+## Global Watchlist
+
+The built-in watchlist (`config/global_watch.yaml`) monitors 13 sites:
 
 | Region | Sites |
 |--------|-------|
@@ -210,7 +352,7 @@ The built-in watchlist (`config/global_watch.yaml`) monitors 13 sites spanning t
 | Americas | Mount Meager (British Columbia), Huascaran (Cordillera Blanca, Peru) |
 | Caucasus | Kolka Glacier (North Ossetia) |
 
-Each site entry specifies coordinates, buffer, and per-site detection overrides merged with shared defaults.
+---
 
 ## Configuration
 
@@ -223,53 +365,38 @@ Site-specific parameters are defined in YAML files under `config/`. See `config/
 - Cascade risk filters (minimum volume, angle of reach, valley width)
 - Alert channels (email, Slack, webhook) with `${ENV_VAR}` secret expansion
 
-## Key algorithms
+---
 
-### Acceleration z-score
+## Deployment
 
-Rather than applying a global threshold ("any glacier moving faster than X is dangerous"), GEWS compares each site to its own historical behavior. A glacier that routinely accelerates every summer is not flagged for its summer acceleration — only when its acceleration exceeds its own historical summer range.
+Production deployment options are documented in [docs/deployment.md](docs/deployment.md):
 
-The z-score is computed as:
+- **Docker / Docker Compose** — `docker compose up -d` starts monitor + dashboard
+- **Kubernetes** — Helm-style manifests in `deploy/kubernetes/`
+- **systemd** — unit file at `deploy/systemd/gews-monitor.service`
+- **cron** — periodic single-pass checks via `deploy/cron/gews-check.cron`
+- **Monitoring** — Prometheus metrics and health checks in `deploy/monitoring/`
 
+Environment variables control all deployment configuration — see the [deployment guide](docs/deployment.md) for the full reference.
+
+---
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest                     # run 377+ tests across 18 files
+pytest -v --tb=short       # verbose with short tracebacks
+pytest tests/test_integration.py  # end-to-end pipeline test
 ```
-z(t) = (a(t) - μ_baseline) / σ_baseline
-```
 
-where `a(t)` is the acceleration at time `t`, and `μ_baseline`, `σ_baseline` are the mean and standard deviation of acceleration over the site's baseline period (first 70% of the observation window).
+All tests use synthetic data and run without network access or real satellite products. GitHub Actions CI runs the full test suite on every push to `main` and on pull requests.
 
-### BOCPD changepoint detection
+---
 
-Bayesian Online Changepoint Detection (Adams & MacKay 2007) with a Student-t observation model identifies abrupt changes in the displacement time-series mean or variance. Unlike the sliding-window z-score, BOCPD does not require a pre-defined baseline period and can detect regime shifts in real time as new acquisitions arrive.
+## Data Requirements
 
-### Step-change detection
-
-Detects sudden displacement jumps (step changes) in the time series — the failure mode observed in the Nepal 2026 event, where the collapse was preceded by two discrete acceleration steps rather than smooth pre-failure creep. Works by identifying statistically significant jumps in displacement magnitude between consecutive acquisition intervals.
-
-### Voight's failure law
-
-For top-scoring anomalies, GEWS fits Voight's empirical relation, which predicts that the inverse of velocity (1/v) decreases linearly toward zero as catastrophic failure approaches. Originally developed for volcanic eruption forecasting (Voight 1988), it has been applied to landslide and glacier collapse prediction. The x-intercept of the linear fit gives a predicted failure time.
-
-### Scheidegger runout model
-
-Cascade risk assessment uses the Scheidegger (1973) volume-dependent mobility relation to estimate runout distance from the height drop and estimated failure volume. When volume is unknown, the model falls back to an angle-of-reach geometric estimate.
-
-## Running with real data
-
-To analyze a real study area:
-
-1. **Create a site config** based on `config/nepal_2026.yaml`
-2. **Search and download data:** `gews search -c your_config.yaml` then `gews download`
-3. **Process with ISCE-2 + MintPy:** `gews process -c your_config.yaml` (requires these tools installed)
-4. **Run detection:** `gews detect -c your_config.yaml`
-5. **Review results** in the output directory or via `gews dashboard`
-
-Or, to run continuously against real NISAR data instead of a one-off batch: `gews monitor -c your_config.yaml --check-now` (see [Operational monitoring](#operational-monitoring-real-nisar-data) above).
-
-## Data requirements
-
-Real (non-synthetic) data access — `gews search`, `gews download`, and `gews monitor` — requires a free [NASA Earthdata Login](https://urs.earthdata.nasa.gov/) account, since both Sentinel-1 (via ASF DAAC) and NISAR products are distributed through Earthdata-authenticated endpoints.
-
-Configure credentials once via a `.netrc` file in your home directory (`~/.netrc`, permissions `600`):
+Real (non-synthetic) data access requires a free [NASA Earthdata Login](https://urs.earthdata.nasa.gov/) account. Configure credentials in `~/.netrc` (permissions `600`):
 
 ```
 machine urs.earthdata.nasa.gov
@@ -277,61 +404,46 @@ machine urs.earthdata.nasa.gov
     password <your-earthdata-password>
 ```
 
-`asf_search` and the NISAR download path both read this file automatically — no credentials are read from or stored in this repository, and none should ever be committed to it. Do not put real credentials in config YAML files under `config/`.
-
-Additional data needed for full-pipeline runs:
-
-- **Sentinel-1 SLC** or **NISAR GUNW/GOFF** products — fetched via `gews search`/`gews download`/`gews monitor`, or supplied directly under `data/slc` / `data/nisar/{gunw,goff}`.
-- **DEM** (for Tier 1 cascade assessment) — any DEM covering the study area (e.g. Copernicus GLO-30), referenced in the site config.
-- **Population data** (optional, for exposure estimates) — e.g. WorldPop raster covering the study area.
+Additional data for full-pipeline runs:
+- **Sentinel-1 SLC** or **NISAR GUNW/GOFF** products — fetched via `gews search`/`gews download`/`gews monitor`
+- **DEM** (for Tier 1 cascade assessment) — e.g. Copernicus GLO-30
+- **Population data** (optional) — e.g. WorldPop raster for exposure estimates
 
 The synthetic demo (`gews demo`) requires none of the above.
 
-## Deployment
+---
 
-Production deployment options are documented in [`deploy/README.md`](deploy/README.md):
+## Key Algorithms
 
-- **Docker Compose** — `docker compose up -d` starts both the monitor and dashboard services. Configurable via environment variables or a `.env` file.
-- **systemd** — a unit file at `deploy/systemd/gews-monitor.service` for running the monitor as a Linux service.
-- **cron** — a crontab entry at `deploy/cron/gews-check.cron` for periodic single-pass check cycles (every 6 hours by default).
+### Acceleration z-score
 
-Alert channels (email/Slack/webhook) are configured via environment variables — see the deployment guide for the full variable reference.
+Each site is compared to its own historical behavior — a glacier that routinely accelerates every summer is not flagged for its summer acceleration, only when acceleration exceeds its own historical range:
 
-## Docker
-
-A `Dockerfile` is provided for a reproducible, dependency-pinned environment:
-
-```bash
-docker build -t gews .
-
-# Synthetic demo — no credentials or volumes needed
-docker run --rm -v "$PWD/output:/app/output" gews demo --output /app/output
-
-# Real monitoring — mount credentials, config, and persistent data/output dirs
-docker run --rm \
-    -v "$HOME/.netrc:/root/.netrc:ro" \
-    -v "$PWD/config:/app/config:ro" \
-    -v "$PWD/data:/app/data" \
-    -v "$PWD/output:/app/output" \
-    gews monitor -c config/global_watch.yaml --check-now
+```
+z(t) = (a(t) - mu_baseline) / sigma_baseline
 ```
 
-The image's `ENTRYPOINT` is the `gews` CLI, so any `gews` subcommand can follow `docker run --rm gews ...` directly.
+### BOCPD changepoint detection
 
-## Development
+Bayesian Online Changepoint Detection (Adams & MacKay 2007) with a Student-t observation model identifies abrupt regime shifts in real time as new acquisitions arrive.
 
-```bash
-pip install -e ".[dev]"
-pytest                     # run tests (170 tests across 10 files)
-pytest -v --tb=short       # verbose with short tracebacks
-pytest tests/test_integration.py  # end-to-end pipeline test
-```
+### Step-change detection
 
-All tests use synthetic data and run without network access or real satellite products. GitHub Actions CI runs the full test suite on every push to `main` and on pull requests (`.github/workflows/ci.yml`).
+Detects sudden displacement jumps — the failure mode observed in the Nepal 2026 event, where collapse was preceded by two discrete acceleration steps rather than smooth pre-failure creep.
+
+### Voight's failure law
+
+Predicts failure time from the inverse-velocity trend (1/v decreasing linearly toward zero). Originally developed for volcanic eruption forecasting (Voight 1988), applied here to glacier and rock-slope collapse prediction.
+
+### Scheidegger runout model
+
+Volume-dependent mobility relation for estimating runout distance from height drop and estimated failure volume (Scheidegger 1973).
+
+---
 
 ## License
 
-MIT (see `pyproject.toml`). A standalone `LICENSE` file has not yet been added — this is a proof-of-concept research project.
+MIT (see `pyproject.toml`).
 
 ## References
 
