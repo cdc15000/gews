@@ -66,21 +66,30 @@ def search_scenes(config: dict) -> list[SceneInfo]:
         Scenes matching the search criteria, sorted by acquisition date.
     """
     site = config["site"]
-    acq = config["acquire"]
+    acq = config.get("acquire", {})
 
     center = Point(site["longitude"], site["latitude"])
     # Buffer in degrees (approximate: 1° ≈ 111 km)
     buffer_deg = site.get("buffer_km", 15) / 111.0
     aoi = center.buffer(buffer_deg)
 
+    # Default date range: last 6 months to today
+    end_date = acq.get("end_date", date.today().isoformat())
+    if "start_date" in acq:
+        start_date = acq["start_date"]
+    else:
+        from datetime import timedelta
+        lookback_days = acq.get("lookback_days", 180)
+        start_date = (date.today() - timedelta(days=lookback_days)).isoformat()
+
     logger.info(
-        "Searching ASF for Sentinel-1 SLC scenes: "
+        "Searching ASF for scenes: "
         "%.2f°N, %.2f°E ± %d km, %s to %s",
         site["latitude"],
         site["longitude"],
         site.get("buffer_km", 15),
-        acq["start_date"],
-        acq["end_date"],
+        start_date,
+        end_date,
     )
 
     search_kwargs = dict(
@@ -88,8 +97,8 @@ def search_scenes(config: dict) -> list[SceneInfo]:
         processingLevel=asf.PRODUCT_TYPE.SLC,
         beamMode=asf.BEAMMODE.IW,
         intersectsWith=aoi.wkt,
-        start=acq["start_date"],
-        end=acq["end_date"],
+        start=start_date,
+        end=end_date,
     )
 
     if acq.get("path_number"):

@@ -67,37 +67,80 @@ def main(verbose: bool) -> None:
 
 @main.command()
 @click.option("--config", "-c", required=True, help="Path to site config YAML")
-def search(config: str) -> None:
-    """Search ASF archive for Sentinel-1 scenes covering the study area."""
+@click.option("--site", "-s", default=None, help="Site name filter (substring match; for multi-site configs)")
+def search(config: str, site: str | None) -> None:
+    """Search ASF archive for Sentinel-1 scenes covering the study area.
+
+    Works with both single-site configs (e.g., nepal_2026.yaml) and
+    multi-site configs (e.g., hkh_priority.yaml, global_watch.yaml).
+    Use --site to filter multi-site configs by name.
+    """
     from gews.acquire import search_scenes, select_track, summarize_scenes
+    from gews.monitor import iter_site_configs
 
-    cfg = _load_config(config)
-    scenes = search_scenes(cfg)
+    site_configs = list(iter_site_configs(config))
 
-    click.echo(summarize_scenes(scenes))
-    click.echo()
+    if site:
+        site_configs = [
+            c for c in site_configs
+            if site.lower() in c["site"]["name"].lower()
+        ]
+        if not site_configs:
+            click.echo(f"No sites matching '{site}' in {config}", err=True)
+            sys.exit(1)
 
-    # Show recommended track
-    track = select_track(scenes, cfg["acquire"].get("path_number"))
-    click.echo(f"\nRecommended: {len(track)} scenes on selected track")
+    for i, cfg in enumerate(site_configs):
+        site_name = cfg["site"]["name"]
+        if len(site_configs) > 1:
+            click.echo(f"\n{'═' * 60}")
+            click.echo(f"  [{i + 1}/{len(site_configs)}] {site_name}")
+            click.echo(f"{'═' * 60}")
+
+        try:
+            scenes = search_scenes(cfg)
+            click.echo(summarize_scenes(scenes))
+
+            # Show recommended track
+            track = select_track(scenes, cfg["acquire"].get("path_number"))
+            click.echo(f"\nRecommended: {len(track)} scenes on selected track")
+        except Exception as e:
+            click.echo(f"  Error searching {site_name}: {e}", err=True)
 
 
 @main.command()
 @click.option("--config", "-c", required=True, help="Path to site config YAML")
-def download(config: str) -> None:
-    """Download SLC scenes from ASF DAAC."""
+@click.option("--site", "-s", default=None, help="Site name filter (substring match)")
+def download(config: str, site: str | None) -> None:
+    """Download SLC scenes from ASF DAAC.
+
+    Works with both single-site and multi-site configs.
+    Use --site to filter by name.
+    """
     from gews.acquire import search_scenes, select_track, download_scenes
+    from gews.monitor import iter_site_configs
 
-    cfg = _load_config(config)
-    scenes = search_scenes(cfg)
-    track = select_track(scenes, cfg["acquire"].get("path_number"))
+    site_configs = list(iter_site_configs(config))
+    if site:
+        site_configs = [
+            c for c in site_configs
+            if site.lower() in c["site"]["name"].lower()
+        ]
+        if not site_configs:
+            click.echo(f"No sites matching '{site}' in {config}", err=True)
+            sys.exit(1)
 
-    acq = cfg["acquire"]
-    download_scenes(
-        track,
-        output_dir=acq.get("output_dir", "data/slc"),
-        n_workers=acq.get("n_workers", 4),
-    )
+    for cfg in site_configs:
+        site_name = cfg["site"]["name"]
+        click.echo(f"\nDownloading: {site_name}")
+        scenes = search_scenes(cfg)
+        track = select_track(scenes, cfg["acquire"].get("path_number"))
+
+        acq = cfg["acquire"]
+        download_scenes(
+            track,
+            output_dir=acq.get("output_dir", "data/slc"),
+            n_workers=acq.get("n_workers", 4),
+        )
 
 
 @main.command()
