@@ -881,11 +881,18 @@ def _apply_voight_analysis(
                 flag.voight_fit = result
                 # Boost score for flags with Voight fit
                 flag.score *= 1.5
+                window = result.get("failure_window_days", [None, None])
+                window_str = ""
+                if window[0] is not None and window[1] is not None:
+                    window_str = f" (95%% CI: {window[0]:.0f}–{window[1]:.0f} days)"
                 logger.info(
-                    "  Flag %d: Voight fit R²=%.2f, predicted failure in %.0f days",
+                    "  Flag %d: Voight fit R²=%.2f, predicted failure %s "
+                    "(%.0f days from last obs)%s",
                     flag.flag_id,
                     result["r_squared"],
+                    result.get("predicted_failure_iso", "?"),
                     result["days_until_failure"],
+                    window_str,
                 )
 
     return flags

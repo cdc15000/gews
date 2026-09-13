@@ -835,6 +835,7 @@ def fit_voight(
     dates: np.ndarray,
     velocity: np.ndarray,
     min_points: int = 5,
+    confidence: float = 0.95,
 ) -> dict | None:
     """
     Fit Voight's empirical failure law to a velocity time series.
@@ -846,6 +847,12 @@ def fit_voight(
     This is the same relation used in volcanic eruption forecasting
     (Voight 1988) and has been applied to landslide prediction.
 
+    The confidence interval on the failure date is computed by
+    propagating the standard errors of the slope and intercept
+    through the x-intercept formula (t_fail = -b/m), using the
+    delta method: Var(t_fail) ≈ (b/m²)²·Var(m) + (1/m)²·Var(b)
+    - 2·(b/m³)·Cov(m,b).
+
     Parameters
     ----------
     dates : np.ndarray
@@ -855,16 +862,26 @@ def fit_voight(
         (accelerating toward failure).
     min_points : int
         Minimum number of points for fit.
+    confidence : float
+        Confidence level for the failure date interval (default 0.95).
 
     Returns
     -------
     dict or None
-        {'predicted_failure_date': ordinal, 'r_squared': float,
-         'inverse_velocity_slope': float}
+        {'predicted_failure_date': ordinal, 'predicted_failure_iso': str,
+         'failure_window_early_iso': str, 'failure_window_late_iso': str,
+         'failure_window_days': [float, float],
+         'r_squared': float, 'inverse_velocity_slope': float,
+         'days_until_failure': float,
+         'confidence_level': float, 'n_points': int}
         None if fit fails or insufficient data.
     """
+    from datetime import datetime, timedelta
+    from scipy import stats as sp_stats
+
     valid = np.isfinite(velocity) & (velocity > 0)
-    if valid.sum() < min_points:
+    n = valid.sum()
+    if n < min_points:
         return None
 
     t = dates[valid].astype(float)
@@ -896,9 +913,68 @@ def fit_voight(
     if r_squared < 0.5 or t_failure <= t[-1]:
         return None
 
+    # --- Confidence interval on failure date via delta method ---
+    days_until = t_failure - t[-1]
+    t_mean = np.mean(t)
+    s_xx = np.sum((t - t_mean) ** 2)
+
+    # Residual standard error
+    if n > 2 and s_xx > 0:
+        mse = ss_res / (n - 2)
+
+        # Variance of slope and intercept, covariance
+        var_slope = mse / s_xx
+        var_intercept = mse * (1.0 / n + t_mean ** 2 / s_xx)
+        cov_slope_intercept = -mse * t_mean / s_xx
+
+        # Delta method: Var(t_fail) where t_fail = -intercept/slope
+        # dt/dm = intercept/slope² = b/m², dt/db = -1/slope = -1/m
+        dt_dm = intercept / (slope ** 2)
+        dt_db = -1.0 / slope
+        var_t_failure = (
+            dt_dm ** 2 * var_slope
+            + dt_db ** 2 * var_intercept
+            + 2 * dt_dm * dt_db * cov_slope_intercept
+        )
+
+        if var_t_failure > 0:
+            se_t_failure = np.sqrt(var_t_failure)
+            # t-distribution critical value
+            t_crit = sp_stats.t.ppf((1 + confidence) / 2, df=n - 2)
+            margin = t_crit * se_t_failure
+            t_early = t_failure - margin
+            t_late = t_failure + margin
+        else:
+            margin = np.nan
+            t_early = t_failure
+            t_late = t_failure
+    else:
+        margin = np.nan
+        t_early = t_failure
+        t_late = t_failure
+
+    # Convert ordinals to ISO date strings
+    def _ordinal_to_iso(ordinal: float) -> str:
+        try:
+            base = datetime.fromordinal(int(ordinal))
+            frac = ordinal - int(ordinal)
+            dt = base + timedelta(days=frac)
+            return dt.strftime("%Y-%m-%d")
+        except (ValueError, OverflowError):
+            return "out-of-range"
+
     return {
         "predicted_failure_date": t_failure,
-        "r_squared": r_squared,
-        "inverse_velocity_slope": slope,
-        "days_until_failure": t_failure - t[-1],
+        "predicted_failure_iso": _ordinal_to_iso(t_failure),
+        "failure_window_early_iso": _ordinal_to_iso(t_early),
+        "failure_window_late_iso": _ordinal_to_iso(t_late),
+        "failure_window_days": [
+            round(float(t_early - t[-1]), 1),
+            round(float(t_late - t[-1]), 1),
+        ],
+        "r_squared": float(r_squared),
+        "inverse_velocity_slope": float(slope),
+        "days_until_failure": float(days_until),
+        "confidence_level": confidence,
+        "n_points": int(n),
     }

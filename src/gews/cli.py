@@ -294,19 +294,27 @@ def demo(output: str, no_plots: bool) -> None:
 
     if flags:
         click.echo(f"\n{'Flag':>6} {'Score':>7} {'Peak Z':>8} {'Area (m²)':>12} "
-                    f"{'Accel (mm/yr²)':>16} {'Voight':>8}")
-        click.echo("-" * 65)
+                    f"{'Accel (mm/yr²)':>16} {'Voight':>8}  {'Failure Estimate':>20}")
+        click.echo("-" * 90)
         for f in flags[:10]:
             voight_str = (
                 f"R²={f.voight_fit['r_squared']:.2f}"
                 if f.voight_fit
                 else "—"
             )
+            if f.voight_fit and "predicted_failure_iso" in f.voight_fit:
+                vf = f.voight_fit
+                failure_str = vf["predicted_failure_iso"]
+                window = vf.get("failure_window_days", [None, None])
+                if window[0] is not None:
+                    failure_str += f" (±{abs(window[1] - window[0]) / 2:.0f}d)"
+            else:
+                failure_str = "—"
             click.echo(
                 f"{f.flag_id:>6d} {f.score:>7.2f} {f.peak_zscore:>8.1f} "
                 f"{f.area_m2:>12,.0f} "
                 f"{f.acceleration_m_yr2 * 1000:>16.2f} "
-                f"{voight_str:>8}"
+                f"{voight_str:>8}  {failure_str:>20}"
             )
 
     click.echo()

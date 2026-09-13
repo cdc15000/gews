@@ -42,3 +42,5 @@ notebooks/output/
 
 # Monitor state (runtime-generated)
 data/monitor_state/
+.claude/worktrees/
+gews/

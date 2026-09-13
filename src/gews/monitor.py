@@ -483,6 +483,20 @@ def build_alerts(
             "displacement_mm": displacement_mm,
             "message": _alert_message(flag, level, sigma_threshold),
         }
+
+        # Include failure date estimate when Voight fit is available
+        if flag.voight_fit:
+            vf = flag.voight_fit
+            alert["voight_r2"] = round(vf["r_squared"], 3)
+            alert["days_until_failure"] = round(vf["days_until_failure"], 1)
+            if "predicted_failure_iso" in vf:
+                alert["predicted_failure_date"] = vf["predicted_failure_iso"]
+            if "failure_window_early_iso" in vf:
+                alert["failure_window"] = {
+                    "early": vf["failure_window_early_iso"],
+                    "late": vf["failure_window_late_iso"],
+                    "confidence": vf.get("confidence_level", 0.95),
+                }
         alerts.append(alert)
         state.alerted_signatures.add(sig)
 
@@ -502,10 +516,21 @@ def _alert_message(flag, level: str, sigma_threshold: float) -> str:
         f"{flag.area_m2:,.0f} m^2 at ({flag.center_lat:.4f}, {flag.center_lon:.4f})."
     )
     if flag.voight_fit:
+        vf = flag.voight_fit
         msg += (
-            f" Voight fit (R^2={flag.voight_fit['r_squared']:.2f}) predicts "
-            f"failure in ~{flag.voight_fit['days_until_failure']:.0f} days."
+            f" Voight fit (R^2={vf['r_squared']:.2f}) predicts "
+            f"failure in ~{vf['days_until_failure']:.0f} days"
         )
+        if "predicted_failure_iso" in vf:
+            msg += f" (~{vf['predicted_failure_iso']})"
+        window = vf.get("failure_window_days", [None, None])
+        if window[0] is not None and window[1] is not None:
+            msg += (
+                f", 95% CI: {window[0]:.0f}–{window[1]:.0f} days "
+                f"({vf.get('failure_window_early_iso', '?')} to "
+                f"{vf.get('failure_window_late_iso', '?')})"
+            )
+        msg += "."
     if level == "CRITICAL":
         msg = "CRITICAL: " + msg
     return msg

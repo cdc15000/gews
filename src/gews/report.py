@@ -259,10 +259,17 @@ def _export_geojson(
         }
 
         if flag.voight_fit:
-            props["voight_r2"] = round(flag.voight_fit["r_squared"], 3)
-            props["voight_days_to_failure"] = round(
-                flag.voight_fit["days_until_failure"], 1
-            )
+            vf = flag.voight_fit
+            props["voight_r2"] = round(vf["r_squared"], 3)
+            props["voight_days_to_failure"] = round(vf["days_until_failure"], 1)
+            if "predicted_failure_iso" in vf:
+                props["predicted_failure_date"] = vf["predicted_failure_iso"]
+            if "failure_window_early_iso" in vf:
+                props["failure_window"] = (
+                    f"{vf['failure_window_early_iso']} to "
+                    f"{vf['failure_window_late_iso']}"
+                )
+                props["confidence_level"] = vf.get("confidence_level", 0.95)
 
         if flag.timeseries is not None:
             props["timeseries"] = flag.timeseries
